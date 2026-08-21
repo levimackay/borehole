@@ -1,0 +1,34 @@
+.bh-graph-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bh-space-2);
+  padding: var(--bh-space-4);
+  height: 100%;
+  min-height: 0;
+}
+
+.bh-graph-view__mode-toggle {
+  display: flex;
+  border: 1px solid var(--bh-border-strong);
+  border-radius: var(--bh-radius-md);
+  overflow: hidden;
+}
+
+.bh-graph-view__mode-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--bh-text-secondary);
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
+.bh-graph-view__mode-btn--active {
+  background: var(--bh-accent);
+  color: var(--bh-accent-fg);
+  font-weight: 600;
+}
+
+.bh-graph-view__note {
+  font-size: 11px;
+  color: var(--bh-text-muted);
+}

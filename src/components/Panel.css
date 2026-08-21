@@ -1,0 +1,36 @@
+.bh-panel {
+  border: 1px solid var(--bh-border);
+  background: var(--bh-bg-panel);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bh-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bh-space-3);
+  padding: var(--bh-space-2) var(--bh-space-3);
+  border-bottom: 1px solid var(--bh-border);
+  background: var(--bh-bg-panel-raised);
+}
+
+.bh-panel__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bh-text-secondary);
+}
+
+.bh-panel__actions {
+  display: flex;
+  gap: var(--bh-space-2);
+}
+
+.bh-panel__body {
+  padding: var(--bh-space-3);
+  overflow: auto;
+  min-height: 0;
+}

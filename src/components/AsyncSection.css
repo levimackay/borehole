@@ -1,0 +1,36 @@
+.bh-async__idle,
+.bh-async__loading {
+  font-size: 12px;
+  color: var(--bh-text-muted);
+  padding: var(--bh-space-3) 0;
+}
+
+.bh-async__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bh-space-2);
+  padding: var(--bh-space-3);
+  border: 1px solid var(--bh-risk-critical-border);
+  background: var(--bh-risk-critical-bg);
+}
+
+.bh-async__error-message {
+  font-size: 12px;
+  color: var(--bh-risk-critical-fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bh-async__retry {
+  border: 1px solid var(--bh-border-strong);
+  background: var(--bh-bg-panel-raised);
+  color: var(--bh-text-primary);
+  padding: 3px 10px;
+  font-size: 11px;
+  border-radius: var(--bh-radius-md);
+}
+
+.bh-async__retry:hover {
+  background: var(--bh-bg-hover);
+}

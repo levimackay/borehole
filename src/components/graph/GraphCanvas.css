@@ -1,0 +1,73 @@
+.bh-graph-canvas {
+  position: relative;
+  height: 480px;
+  border: 1px solid var(--bh-border);
+  background: var(--bh-bg-inset);
+}
+
+.bh-graph-canvas__empty {
+  font-size: 12px;
+  color: var(--bh-text-muted);
+  padding: var(--bh-space-3) 0;
+}
+
+.bh-graph-canvas__truncated {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px var(--bh-space-2);
+  font-size: 11px;
+  background: var(--bh-risk-medium-bg);
+  color: var(--bh-risk-medium-fg);
+  border-top: 1px solid var(--bh-risk-medium-border);
+}
+
+.bh-graph-node {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--bh-bg-panel-raised);
+  border: 1px solid var(--bh-border-strong);
+  border-radius: var(--bh-radius-md);
+  min-width: 120px;
+}
+
+.bh-graph-node--root {
+  border-color: var(--bh-accent);
+  box-shadow: 0 0 0 1px var(--bh-accent);
+}
+
+.bh-graph-node__kind {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bh-text-muted);
+}
+
+.bh-graph-node__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bh-text-primary);
+}
+
+/* xyflow chrome, restyled to fit the panel language instead of its defaults */
+.bh-graph-canvas .react-flow__controls {
+  box-shadow: none;
+  border: 1px solid var(--bh-border);
+}
+
+.bh-graph-canvas .react-flow__controls-button {
+  background: var(--bh-bg-panel-raised);
+  border-bottom: 1px solid var(--bh-border);
+  fill: var(--bh-text-secondary);
+}
+
+.bh-graph-canvas .react-flow__edge-text {
+  fill: var(--bh-text-secondary);
+}
+
+.bh-graph-canvas .react-flow__edge-textbg {
+  fill: var(--bh-bg-inset);
+}

@@ -1,0 +1,32 @@
+.bh-evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bh-space-1);
+}
+
+.bh-evidence-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--bh-space-2);
+  font-size: 11px;
+}
+
+.bh-evidence-list__tag {
+  flex-shrink: 0;
+  color: var(--bh-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  width: 58px;
+}
+
+.bh-evidence-list__detail {
+  color: var(--bh-text-secondary);
+  word-break: break-all;
+}
+
+.bh-evidence-list__empty {
+  font-size: 11px;
+  color: var(--bh-text-muted);
+  font-style: italic;
+}

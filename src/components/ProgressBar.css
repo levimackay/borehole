@@ -1,0 +1,25 @@
+.bh-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--bh-space-3);
+}
+
+.bh-progress__track {
+  flex: 1;
+  height: 6px;
+  background: var(--bh-bg-inset);
+  border: 1px solid var(--bh-border);
+  overflow: hidden;
+}
+
+.bh-progress__fill {
+  height: 100%;
+  background: var(--bh-accent);
+  transition: width 0.2s ease-out;
+}
+
+.bh-progress__label {
+  font-size: 11px;
+  color: var(--bh-text-secondary);
+  white-space: nowrap;
+}

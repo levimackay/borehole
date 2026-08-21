@@ -1,0 +1,19 @@
+.bh-search-view {
+  padding: var(--bh-space-4);
+  max-width: 640px;
+}
+
+.bh-search-view__input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--bh-border);
+  background: var(--bh-bg-inset);
+  color: var(--bh-text-primary);
+  border-radius: var(--bh-radius-md);
+  margin-bottom: var(--bh-space-3);
+}
+
+.bh-search-view__input:focus {
+  outline: var(--bh-focus-ring);
+  outline-offset: var(--bh-focus-ring-offset);
+}
