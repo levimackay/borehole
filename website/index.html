@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Borehole — Understand the code before you change it.</title>
+    <title>Borehole. Understand the code before you change it.</title>
     <meta
       name="description"
       content="Borehole is a local-first developer tool that helps you understand a codebase you didn't write: blast radius, dependency graphs, git archaeology, and an evidence-backed reading list for before you change anything. No account, no cloud, no telemetry."
@@ -11,7 +11,7 @@
     <link rel="canonical" href="https://borehole.levimackay.com" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <meta property="og:title" content="Borehole — Understand the code before you change it." />
+    <meta property="og:title" content="Borehole. Understand the code before you change it." />
     <meta
       property="og:description"
       content="A local-first developer tool that helps you understand a codebase you didn't write, with the receipts attached. No account, no cloud, no telemetry."
@@ -21,7 +21,7 @@
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Borehole — Understand the code before you change it." />
+    <meta name="twitter:title" content="Borehole. Understand the code before you change it." />
     <meta
       name="twitter:description"
       content="A local-first developer tool that helps you understand a codebase you didn't write, with the receipts attached. No account, no cloud, no telemetry."
@@ -44,14 +44,17 @@
     </header>
 
     <main id="main">
-      <!-- 1. Hero -->
-      <section id="top" class="bh-hero">
-        <div class="bh-wrap">
+      <!-- 1. Hero: diptych -->
+      <section id="top" class="split bh-hero">
+        <div class="text">
+          <p class="kicker bh-hero__kicker">local-first codebase intelligence</p>
           <h1 class="bh-hero__headline">Understand the code before you change it.</h1>
           <p class="bh-hero__sub">
-            Borehole is a local-first developer tool that helps you understand a codebase you
-            didn't write — what a piece of code does, who depends on it, what its history looks
-            like, and what you should read before you touch it.
+            A local-first developer tool that helps you understand a codebase you didn't write:
+            what a piece of code does, who depends on it, what its history looks like, and what
+            you should read before you touch it. Every answer is backed by evidence you can
+            inspect: a citation to a reference, a commit, or a test file, never an unsupported
+            summary.
           </p>
           <div class="bh-hero__ctas">
             <a class="bh-btn bh-btn--primary" href="#download">Download</a>
@@ -62,15 +65,12 @@
               >View on GitHub</a
             >
           </div>
-          <p class="bh-hero__note">
-            Borehole is a desktop application — this page renders fine on mobile, the app itself
-            does not run here.
-          </p>
-          <pre class="bh-code bh-hero__transcript"><code><span class="bh-code__prompt">$</span> borehole impact top --before
-BEFORE YOU CHANGE THIS: top
+        </div>
+        <div class="proof">
+          <pre class="evidence bh-hero__transcript"><span class="title">$ borehole impact top --before</span>BEFORE YOU CHANGE THIS: top
 
 Understand first:
-  1. middle — this depends on it
+  1. middle: this depends on it
 
 BLAST RADIUS: top
 
@@ -80,12 +80,32 @@ Test suites:      0
 Public API:       yes
 Config files:     0
 
-Risk: LOW
-Confidence: high</code></pre>
+Risk: <span class="hl">LOW</span>
+Confidence: <span class="hl">high</span></pre>
         </div>
       </section>
 
-      <!-- 2. The problem -->
+      <!-- 2. Evidence model: diptych, reversed (proof left, claim right) -->
+      <section class="split reverse split--reveal">
+        <div class="proof">
+          <pre class="evidence"><span class="title">$ borehole symbol Handler</span>class   Handler          billing/handler.ts:1
+class   Handler          shipping/handler.ts:1
+method  Handler.process  billing/handler.ts:2
+method  Handler.process  shipping/handler.ts:2</pre>
+        </div>
+        <div class="text">
+          <h2>Two classes. One shared name.</h2>
+          <p>
+            Two unrelated classes happen to share a name. Borehole's reference resolver refuses
+            to guess which one a call site meant. It reports the reference as unresolved at low
+            confidence rather than silently attributing it to one of them. That honesty is the
+            whole design philosophy: every relationship the engine reports carries a high,
+            medium, or low confidence tag, and insufficient evidence is always a valid answer.
+          </p>
+        </div>
+      </section>
+
+      <!-- 3. The problem: full-width prose, no proof pairing, no reveal -->
       <section class="bh-problem bh-section-divider">
         <div class="bh-wrap">
           <h2>The problem</h2>
@@ -100,7 +120,7 @@ Confidence: high</code></pre>
         </div>
       </section>
 
-      <!-- 3. Product demo -->
+      <!-- 4. Product demo: full-bleed screenshot, no reveal -->
       <section class="bh-demo bh-section-divider">
         <div class="bh-wrap bh-wrap--wide">
           <h2>See it in action</h2>
@@ -116,27 +136,31 @@ Confidence: high</code></pre>
         </div>
       </section>
 
-      <!-- 4a. Feature — wide -->
-      <section class="bh-feature-wide">
-        <div class="bh-wrap bh-feature-wide__inner">
+      <!-- 5. Before you change this: diptych (not reversed, continues the alternation) -->
+      <section class="split split--reveal">
+        <div class="text">
           <h2>Before you change this</h2>
           <p>
-            A generated reading list — the callers, dependencies, and tests worth understanding
-            first — plus historical warnings when Git history shows the code has been heavily
+            A generated reading list: the callers, dependencies, and tests worth understanding
+            first, plus historical warnings when Git history shows the code has been heavily
             reworked before.
           </p>
         </div>
+        <div class="proof">
+          <pre class="evidence"><span class="title">$ borehole impact top --before</span>Understand first:
+  1. middle: this depends on it</pre>
+        </div>
       </section>
 
-      <!-- 4b. Feature — dense table -->
-      <section class="bh-feature-table-section">
+      <!-- 6. Everything else: full-width dense definition list, no reveal -->
+      <section class="bh-feature-table-section bh-section-divider">
         <div class="bh-wrap">
           <h2>Everything else</h2>
           <dl class="bh-feature-table">
             <dt>Dependency &amp; call graph</dt>
             <dd>
               Interactive, evidence-backed graphs of who calls what. Every node and edge
-              corresponds to a real, resolved reference — never a decorative connection.
+              corresponds to a real, resolved reference, never a decorative connection.
               Bounded-depth traversal that's cycle-safe on recursive/circular code.
             </dd>
 
@@ -144,13 +168,13 @@ Confidence: high</code></pre>
             <dd>
               Select a symbol; see its direct and indirect callers, test coverage,
               public-API status, and a risk tier (low/medium/high/critical) with the specific
-              reasons behind it — never a bare "this will break," always "these areas may be
+              reasons behind it: never a bare "this will break," always "these areas may be
               affected, and here's why."
             </dd>
 
             <dt>Git archaeology</dt>
             <dd>
-              File and (best-effort) symbol-level history via git2/libgit2 — never a shell-out
+              File and (best-effort) symbol-level history via git2/libgit2: never a shell-out
               to the git binary, so a malicious repository can't inject a command through a
               crafted branch name or commit message. Rename-following history, temporal
               coupling (files that change together, presented as correlation, not causation),
@@ -158,17 +182,10 @@ Confidence: high</code></pre>
               whole-file attribution.
             </dd>
 
-            <dt>Evidence, everywhere</dt>
-            <dd>
-              Every report field that isn't a raw count cites what produced it — a reference
-              site, a commit, a test file. If the evidence isn't there, the report says so
-              instead of inventing a plausible-sounding summary.
-            </dd>
-
             <dt>Test discovery</dt>
             <dd>
               Naming-convention, directory-convention, and confirmed-import heuristics find a
-              symbol's related tests — clearly labeled as related tests, never as a measured
+              symbol's related tests, clearly labeled as related tests, never as a measured
               coverage percentage Borehole doesn't have.
             </dd>
 
@@ -181,24 +198,7 @@ Confidence: high</code></pre>
         </div>
       </section>
 
-      <!-- 5. Evidence model callout -->
-      <section class="bh-evidence">
-        <div class="bh-wrap bh-evidence__inner">
-          <h2>The evidence model</h2>
-          <pre class="bh-code"><code><span class="bh-code__prompt">$</span> borehole symbol Handler
-class   Handler          billing/handler.ts:1
-class   Handler          shipping/handler.ts:1
-method  Handler.process  billing/handler.ts:2
-method  Handler.process  shipping/handler.ts:2</code></pre>
-          <p>
-            Two unrelated classes happen to share a name. Borehole's reference resolver refuses
-            to guess which one a call site meant — it reports the reference as unresolved at low
-            confidence rather than silently attributing it to one of them.
-          </p>
-        </div>
-      </section>
-
-      <!-- 6. CLI -->
+      <!-- 7. CLI -->
       <section class="bh-cli bh-section-divider">
         <div class="bh-wrap">
           <h2>CLI</h2>
@@ -257,25 +257,25 @@ method  Handler.process  shipping/handler.ts:2</code></pre>
         </div>
       </section>
 
-      <!-- 7. Privacy / security strip -->
+      <!-- 8. Privacy / security strip -->
       <section class="bh-privacy">
         <div class="bh-wrap bh-privacy__inner">
           <h2 class="bh-visually-hidden">Privacy and security</h2>
           <ul>
             <li>No account. No cloud backend. No telemetry.</li>
             <li>
-              Reads only the repository you open, plus its local <code>.git</code> directory —
-              read-only, zero network requests by default.
+              Reads only the repository you open, plus its local <code>.git</code> directory.
+              Read-only: no fetches, no writes. Zero network requests by default.
             </li>
             <li>
-              All Git access goes through git2/libgit2, never a shell-out — closing off command
-              injection via crafted branch names or commit messages.
+              All Git access goes through git2/libgit2, never a shell-out. This closes off
+              command injection via crafted branch names or commit messages.
             </li>
           </ul>
         </div>
       </section>
 
-      <!-- 8. Architecture -->
+      <!-- 9. Architecture -->
       <section class="bh-arch bh-section-divider">
         <div class="bh-wrap bh-wrap--wide">
           <h2>Architecture</h2>
@@ -398,7 +398,7 @@ method  Handler.process  shipping/handler.ts:2</code></pre>
         </div>
       </section>
 
-      <!-- 9. Supported languages -->
+      <!-- 10. Supported languages -->
       <section class="bh-languages bh-section-divider">
         <div class="bh-wrap">
           <h2>Supported languages</h2>
@@ -410,11 +410,11 @@ method  Handler.process  shipping/handler.ts:2</code></pre>
             <li>Python</li>
             <li>Go</li>
           </ul>
-          <p class="bh-languages__note">v1: full symbol extraction + reference resolution</p>
+          <p class="bh-languages__note">v1: full symbol extraction and reference resolution.</p>
         </div>
       </section>
 
-      <!-- 10. Download -->
+      <!-- 11. Download -->
       <section id="download" class="bh-download bh-section-divider">
         <div class="bh-wrap">
           <h2>Download</h2>
@@ -431,6 +431,7 @@ method  Handler.process  shipping/handler.ts:2</code></pre>
       </section>
     </main>
 
+    <!-- 12. Footer -->
     <footer class="bh-footer">
       <div class="bh-wrap bh-footer__inner">
         <ul class="bh-footer__links">
@@ -444,6 +445,10 @@ method  Handler.process  shipping/handler.ts:2</code></pre>
             >
           </li>
         </ul>
+        <p class="bh-footer__disclosure">
+          Borehole is a desktop application. This page renders fine on mobile; the app itself
+          does not run here.
+        </p>
         <p class="bh-footer__disclosure">
           Development of this project includes AI-assisted software engineering using Claude
           Code. All code is reviewed, tested, and maintained by the project author.

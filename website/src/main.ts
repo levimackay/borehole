@@ -9,6 +9,30 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/site.css";
 
-// The page has no client-side interactivity beyond the CSS-only hero reveal
-// (see src/styles/site.css). This file exists solely to pull in the
-// self-hosted fonts and stylesheets in the same order the desktop app uses.
+// The hero's reveal is pure CSS (see src/styles/site.css: .bh-hero__* +
+// @keyframes bh-reveal). The only client-side behavior here is triggering
+// the below-the-fold diptych rows' cross-fade the first time each one
+// enters the viewport, and never again.
+const revealRows = document.querySelectorAll<HTMLElement>(".split--reveal");
+
+if (revealRows.length > 0) {
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    revealRows.forEach((row) => observer.observe(row));
+  } else {
+    // No IntersectionObserver support: show the content immediately
+    // rather than leaving it permanently hidden.
+    revealRows.forEach((row) => row.classList.add("is-visible"));
+  }
+}

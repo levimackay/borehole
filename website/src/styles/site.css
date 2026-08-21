@@ -1,3 +1,13 @@
+/*
+ * Split Studio (v2 redesign)
+ *
+ * Macrostructure: a diptych. Every claim gets its real proof (a terminal
+ * transcript or a screenshot) pinned directly beside it, alternating sides
+ * down the page (.split / .split.reverse), interleaved with full-width
+ * dense sections that carry no proof pairing and no reveal animation. See
+ * DESIGN.md for the full rationale.
+ */
+
 /* Layout primitives ------------------------------------------------- */
 
 .bh-wrap--wide {
@@ -68,44 +78,153 @@ section {
   color: var(--bh-text-primary);
 }
 
-/* Hero ------------------------------------------------------------- */
+/* Split Studio diptych ------------------------------------------------ */
+/* .split pairs a claim (.text) with its proof (.proof); .split.reverse
+   swaps which side the claim sits on. Full width, edge to edge: the two
+   halves of the row are the unit, not a centered container. */
 
-.bh-hero {
-  padding-top: var(--bh-space-6);
-  padding-bottom: var(--bh-space-6);
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-bottom: 1px solid var(--bh-border);
 }
 
-.bh-hero__headline {
-  font-size: clamp(28px, 5vw, 46px);
-  letter-spacing: -0.02em;
+.split .text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--bh-space-8) var(--bh-space-7);
+  border-right: 1px solid var(--bh-border);
+}
+
+.split .proof {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--bh-space-7);
+  background: var(--bh-bg-panel);
+}
+
+.split.reverse .text {
+  order: 2;
+  border-right: none;
+  border-left: 1px solid var(--bh-border);
+}
+
+.split.reverse .proof {
+  order: 1;
+}
+
+.text .kicker {
+  font-family: var(--bh-font-mono);
+  font-size: 13px;
+  color: var(--bh-text-muted);
+  margin-bottom: var(--bh-space-4);
+}
+
+.text h1 {
+  font-size: clamp(2rem, 2.6vw + 1rem, 3rem);
+  letter-spacing: -0.015em;
+  line-height: 1.12;
   max-width: 15ch;
+  margin-bottom: var(--bh-space-5);
 }
 
-.bh-hero__sub {
+.text h2 {
+  font-size: clamp(22px, 3.6vw, 30px);
+  letter-spacing: -0.01em;
+  max-width: 20ch;
+  margin-bottom: var(--bh-space-4);
+}
+
+.text p {
   font-family: var(--bh-font-sans);
   font-size: 16px;
   color: var(--bh-text-secondary);
-  max-width: 62ch;
+  line-height: 1.65;
+  max-width: 46ch;
+}
+
+.text p + p {
   margin-top: var(--bh-space-4);
+}
+
+.split .text h1 + p,
+.split .text h2 + p {
+  margin-top: 0;
+}
+
+.bh-hero__sub {
+  margin-bottom: var(--bh-space-6);
 }
 
 .bh-hero__ctas {
   display: flex;
   gap: var(--bh-space-3);
   flex-wrap: wrap;
-  margin-top: var(--bh-space-5);
 }
 
-.bh-hero__note {
-  margin-top: var(--bh-space-4);
+/* Evidence: a real terminal transcript. white-space: pre lives on the
+   container itself, not just on inner spans, so a captured transcript
+   renders exactly as printed. */
+
+.evidence {
+  background: var(--bh-bg-inset);
+  border: 1px solid var(--bh-border);
+  border-radius: var(--bh-radius-sm);
+  padding: var(--bh-space-5);
+  margin: 0;
+  font-family: var(--bh-font-mono);
   font-size: 13px;
-  color: var(--bh-text-muted);
-  max-width: 60ch;
+  color: var(--bh-text-secondary);
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.65;
+  max-width: 460px;
+  width: 100%;
+  /* Flex/grid items default to min-width: auto, which lets a long
+     unwrapped transcript line establish an intrinsic minimum width wider
+     than the viewport and push the whole row into horizontal overflow
+     instead of scrolling inside this box, where overflow-x: auto above is
+     supposed to catch it. min-width: 0 is what actually lets that box
+     shrink and hand scrolling to its own overflow. */
+  min-width: 0;
 }
 
-.bh-hero__transcript {
-  margin-top: var(--bh-space-6);
+.evidence .hl {
+  color: var(--bh-accent-strong);
 }
+
+.evidence .title {
+  color: var(--bh-accent-strong);
+  margin-bottom: var(--bh-space-3);
+  display: block;
+}
+
+/* Diptych reveal: rows below the hero cross-fade their two halves in,
+   claim first and proof ~80ms after, once, the first time the row enters
+   the viewport (see src/main.ts). transform/opacity only. */
+
+.split.split--reveal .text,
+.split.split--reveal .proof {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.5s ease-out,
+    transform 0.5s ease-out;
+}
+
+.split.split--reveal .proof {
+  transition-delay: 80ms;
+}
+
+.split.split--reveal.is-visible .text,
+.split.split--reveal.is-visible .proof {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hero reveal --------------------------------------------------------- */
 
 @keyframes bh-reveal {
   from {
@@ -118,24 +237,24 @@ section {
   }
 }
 
+.bh-hero__kicker,
 .bh-hero__headline,
 .bh-hero__sub,
 .bh-hero__ctas,
-.bh-hero__note,
 .bh-hero__transcript {
   animation: bh-reveal 0.55s ease both;
 }
 
-.bh-hero__headline {
+.bh-hero__kicker {
   animation-delay: 0s;
 }
+.bh-hero__headline {
+  animation-delay: 0.1s;
+}
 .bh-hero__sub {
-  animation-delay: 0.12s;
+  animation-delay: 0.2s;
 }
 .bh-hero__ctas {
-  animation-delay: 0.24s;
-}
-.bh-hero__note {
   animation-delay: 0.3s;
 }
 .bh-hero__transcript {
@@ -169,33 +288,7 @@ section {
   height: auto;
 }
 
-/* Feature — wide (4a) --------------------------------------------------- */
-
-.bh-feature-wide {
-  background: var(--bh-bg-panel);
-  border-top: 1px solid var(--bh-border);
-  border-bottom: 1px solid var(--bh-border);
-}
-
-.bh-feature-wide__inner {
-  padding-top: var(--bh-space-6);
-  padding-bottom: var(--bh-space-6);
-}
-
-.bh-feature-wide h2 {
-  font-size: clamp(24px, 4vw, 34px);
-  max-width: 14ch;
-}
-
-.bh-feature-wide p {
-  font-family: var(--bh-font-sans);
-  font-size: 18px;
-  color: var(--bh-text-secondary);
-  max-width: 56ch;
-  margin-top: var(--bh-space-4);
-}
-
-/* Feature — dense table (4b) --------------------------------------------- */
+/* Feature table (dense definition list) --------------------------------- */
 
 .bh-feature-table-section h2 {
   margin-bottom: var(--bh-space-4);
@@ -230,7 +323,7 @@ section {
 
 @media (max-width: 640px) {
   .bh-feature-table {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .bh-feature-table dt {
     border-bottom: none;
@@ -239,37 +332,6 @@ section {
   .bh-feature-table dd {
     padding-top: 0;
   }
-}
-
-/* Evidence callout -------------------------------------------------------- */
-
-.bh-evidence {
-  background: var(--bh-bg-inset);
-  border-top: 1px solid var(--bh-border);
-  border-bottom: 1px solid var(--bh-border);
-}
-
-.bh-evidence__inner {
-  padding-top: var(--bh-space-6);
-  padding-bottom: var(--bh-space-6);
-}
-
-.bh-evidence h2 {
-  font-size: clamp(22px, 3.6vw, 30px);
-}
-
-.bh-evidence .bh-code {
-  margin-top: var(--bh-space-5);
-  background: var(--bh-bg-canvas);
-}
-
-.bh-evidence p {
-  font-family: var(--bh-font-sans);
-  font-size: 18px;
-  line-height: 1.65;
-  color: var(--bh-text-secondary);
-  max-width: 62ch;
-  margin-top: var(--bh-space-5);
 }
 
 /* CLI table ------------------------------------------------------------- */
@@ -312,6 +374,9 @@ section {
   color: var(--bh-text-secondary);
 }
 
+/* Horizontal-scroll wrapper: the table has a min-width above, so on
+   narrow screens it scrolls inside this box instead of squeezing or
+   wrapping its cells. */
 .bh-cli-table-wrap {
   overflow-x: auto;
 }
@@ -366,6 +431,18 @@ section {
 .bh-arch__scroll {
   overflow-x: auto;
   margin-top: var(--bh-space-5);
+}
+
+/* Below 640px the diagram (min-width: 640px on its svg, below) genuinely
+   overflows and scrolls, but a plain overflow box gives no visual hint
+   there's more to the right. A right-edge fade is a cheap, honest
+   affordance for that scoped to exactly the widths where it applies, not
+   decoration shown when the diagram already fits. */
+@media (max-width: 640px) {
+  .bh-arch__scroll {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent 100%);
+  }
 }
 
 .bh-arch__scroll svg {
@@ -477,16 +554,65 @@ section {
   max-width: 70ch;
 }
 
-/* Reduced motion ------------------------------------------------------- */
+/* Responsive: diptych collapses to one column ---------------------------- */
+/* Breakpoint: 800px. Below this the two-column text/proof grid gets
+   cramped (the kicker/headline/CTA column and the transcript column both
+   need real room to breathe), so it drops to a single column: .text
+   above, .proof below, always in that order regardless of .reverse. */
+
+@media (max-width: 800px) {
+  .split,
+  .split.reverse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .split .text,
+  .split.reverse .text {
+    order: 1;
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid var(--bh-border);
+  }
+
+  .split .proof,
+  .split.reverse .proof {
+    order: 2;
+  }
+
+  .split .text {
+    padding: var(--bh-space-6) var(--bh-space-5);
+  }
+
+  .split .proof {
+    padding: var(--bh-space-6) var(--bh-space-5);
+  }
+
+  .text p,
+  .text h1,
+  .text h2 {
+    max-width: none;
+  }
+}
+
+/* Reduced motion --------------------------------------------------------- */
+/* Every reveal (hero and diptych rows alike) collapses to its final state
+   instantly: no animation, no transition, not just a shorter one. */
 
 @media (prefers-reduced-motion: reduce) {
+  .bh-hero__kicker,
   .bh-hero__headline,
   .bh-hero__sub,
   .bh-hero__ctas,
-  .bh-hero__note,
   .bh-hero__transcript {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+
+  .split.split--reveal .text,
+  .split.split--reveal .proof {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
