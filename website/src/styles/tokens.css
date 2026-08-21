@@ -1,0 +1,96 @@
+/**
+ * Design tokens, copied exactly from the desktop app's src/styles/tokens.css
+ * (confidence/risk tokens omitted — app-internal only, not used on this site).
+ * Dark is the default; light mode is a full override via [data-theme="light"]
+ * or prefers-color-scheme, never a hardcoded single-mode color.
+ */
+
+:root {
+  /* type */
+  --bh-font-sans:
+    "IBM Plex Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  --bh-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* spacing scale */
+  --bh-space-1: 4px;
+  --bh-space-2: 8px;
+  --bh-space-3: 12px;
+  --bh-space-4: 16px;
+  --bh-space-5: 24px;
+  --bh-space-6: 32px;
+
+  /* radius: deliberately small and used only on interactive controls, not panels */
+  --bh-radius-sm: 2px;
+  --bh-radius-md: 3px;
+
+  --bh-focus-ring: 2px solid var(--bh-accent);
+  --bh-focus-ring-offset: 1px;
+
+  /* dark palette (default) */
+  --bh-bg-canvas: #121417;
+  --bh-bg-panel: #181b1f;
+  --bh-bg-panel-raised: #20242a;
+  --bh-bg-inset: #0e1013;
+  --bh-bg-hover: #262b32;
+  --bh-bg-selected: #2a3038;
+
+  --bh-border: #2a2e35;
+  --bh-border-strong: #6a717c;
+
+  --bh-text-primary: #e4e6ea;
+  --bh-text-secondary: #9aa1ac;
+  --bh-text-muted: #7d848f;
+
+  --bh-accent: #4fb3ac;
+  --bh-accent-strong: #6ecac3;
+  --bh-accent-fg: #06211f;
+
+  --bh-danger: #d9635a;
+}
+
+/* explicit light override, either via system preference or a manual toggle */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bh-bg-canvas: #f4f4f2;
+    --bh-bg-panel: #fbfbfa;
+    --bh-bg-panel-raised: #ffffff;
+    --bh-bg-inset: #ececea;
+    --bh-bg-hover: #e9e9e6;
+    --bh-bg-selected: #dfe6e5;
+
+    --bh-border: #d8d8d4;
+    --bh-border-strong: #858888;
+
+    --bh-text-primary: #1b1d1f;
+    --bh-text-secondary: #565b60;
+    --bh-text-muted: #6c7076;
+
+    --bh-accent: #287c74;
+    --bh-accent-strong: #226961;
+    --bh-accent-fg: #f2fbfa;
+
+    --bh-danger: #b23e35;
+  }
+}
+
+:root[data-theme="light"] {
+  --bh-bg-canvas: #f4f4f2;
+  --bh-bg-panel: #fbfbfa;
+  --bh-bg-panel-raised: #ffffff;
+  --bh-bg-inset: #ececea;
+  --bh-bg-hover: #e9e9e6;
+  --bh-bg-selected: #dfe6e5;
+
+  --bh-border: #d8d8d4;
+  --bh-border-strong: #858888;
+
+  --bh-text-primary: #1b1d1f;
+  --bh-text-secondary: #565b60;
+  --bh-text-muted: #6c7076;
+
+  --bh-accent: #287c74;
+  --bh-accent-strong: #226961;
+  --bh-accent-fg: #f2fbfa;
+
+  --bh-danger: #b23e35;
+}

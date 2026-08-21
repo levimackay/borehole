@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Borehole — Understand the code before you change it.</title>
+    <meta
+      name="description"
+      content="Borehole is a local-first developer tool that helps you understand a codebase you didn't write: blast radius, dependency graphs, git archaeology, and an evidence-backed reading list for before you change anything. No account, no cloud, no telemetry."
+    />
+    <link rel="canonical" href="https://borehole.levimackay.com" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:title" content="Borehole — Understand the code before you change it." />
+    <meta
+      property="og:description"
+      content="A local-first developer tool that helps you understand a codebase you didn't write, with the receipts attached. No account, no cloud, no telemetry."
+    />
+    <meta property="og:image" content="https://borehole.levimackay.com/og-image.png" />
+    <meta property="og:url" content="https://borehole.levimackay.com" />
+    <meta property="og:type" content="website" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Borehole — Understand the code before you change it." />
+    <meta
+      name="twitter:description"
+      content="A local-first developer tool that helps you understand a codebase you didn't write, with the receipts attached. No account, no cloud, no telemetry."
+    />
+    <meta name="twitter:image" content="https://borehole.levimackay.com/og-image.png" />
+  </head>
+  <body>
+    <a class="bh-skip-link" href="#main">Skip to content</a>
+
+    <header class="bh-header">
+      <div class="bh-wrap bh-header__row">
+        <a class="bh-brand" href="#top">
+          <span class="bh-brand__mark" aria-hidden="true">bh</span>
+          <span class="bh-brand__name">borehole</span>
+        </a>
+        <a class="bh-header__link" href="https://github.com/levimackay/borehole" rel="noopener">
+          github.com/levimackay/borehole
+        </a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- 1. Hero -->
+      <section id="top" class="bh-hero">
+        <div class="bh-wrap">
+          <h1 class="bh-hero__headline">Understand the code before you change it.</h1>
+          <p class="bh-hero__sub">
+            Borehole is a local-first developer tool that helps you understand a codebase you
+            didn't write — what a piece of code does, who depends on it, what its history looks
+            like, and what you should read before you touch it.
+          </p>
+          <div class="bh-hero__ctas">
+            <a class="bh-btn bh-btn--primary" href="#download">Download</a>
+            <a
+              class="bh-btn bh-btn--secondary"
+              href="https://github.com/levimackay/borehole"
+              rel="noopener"
+              >View on GitHub</a
+            >
+          </div>
+          <p class="bh-hero__note">
+            Borehole is a desktop application — this page renders fine on mobile, the app itself
+            does not run here.
+          </p>
+          <pre class="bh-code bh-hero__transcript"><code><span class="bh-code__prompt">$</span> borehole impact top --before
+BEFORE YOU CHANGE THIS: top
+
+Understand first:
+  1. middle — this depends on it
+
+BLAST RADIUS: top
+
+Direct callers:   0
+Indirect callers: 0
+Test suites:      0
+Public API:       yes
+Config files:     0
+
+Risk: LOW
+Confidence: high</code></pre>
+        </div>
+      </section>
+
+      <!-- 2. The problem -->
+      <section class="bh-problem bh-section-divider">
+        <div class="bh-wrap">
+          <h2>The problem</h2>
+          <p style="margin-top: var(--bh-space-4)">
+            You've just been handed a codebase you didn't write. Before you can safely change
+            anything, you need to answer questions no IDE jump-to-definition fully covers: who
+            else calls this? What tests actually cover it? Has it been rewritten three times for
+            a reason nobody wrote down? Is this the kind of code that historically breaks
+            something else when it changes? Today that means grepping, reading
+            <code>git blame</code>, and guessing.
+          </p>
+        </div>
+      </section>
+
+      <!-- 3. Product demo -->
+      <section class="bh-demo bh-section-divider">
+        <div class="bh-wrap bh-wrap--wide">
+          <h2>See it in action</h2>
+          <div class="bh-demo__frame">
+            <img
+              src="/screenshots/command-palette.png"
+              alt="Borehole's command palette, showing repository, symbol, and graph commands"
+              width="1440"
+              height="900"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- 4a. Feature — wide -->
+      <section class="bh-feature-wide">
+        <div class="bh-wrap bh-feature-wide__inner">
+          <h2>Before you change this</h2>
+          <p>
+            A generated reading list — the callers, dependencies, and tests worth understanding
+            first — plus historical warnings when Git history shows the code has been heavily
+            reworked before.
+          </p>
+        </div>
+      </section>
+
+      <!-- 4b. Feature — dense table -->
+      <section class="bh-feature-table-section">
+        <div class="bh-wrap">
+          <h2>Everything else</h2>
+          <dl class="bh-feature-table">
+            <dt>Dependency &amp; call graph</dt>
+            <dd>
+              Interactive, evidence-backed graphs of who calls what. Every node and edge
+              corresponds to a real, resolved reference — never a decorative connection.
+              Bounded-depth traversal that's cycle-safe on recursive/circular code.
+            </dd>
+
+            <dt>Blast radius</dt>
+            <dd>
+              Select a symbol; see its direct and indirect callers, test coverage,
+              public-API status, and a risk tier (low/medium/high/critical) with the specific
+              reasons behind it — never a bare "this will break," always "these areas may be
+              affected, and here's why."
+            </dd>
+
+            <dt>Git archaeology</dt>
+            <dd>
+              File and (best-effort) symbol-level history via git2/libgit2 — never a shell-out
+              to the git binary, so a malicious repository can't inject a command through a
+              crafted branch name or commit message. Rename-following history, temporal
+              coupling (files that change together, presented as correlation, not causation),
+              and an honest confidence signal whenever line-tracking has to fall back to
+              whole-file attribution.
+            </dd>
+
+            <dt>Evidence, everywhere</dt>
+            <dd>
+              Every report field that isn't a raw count cites what produced it — a reference
+              site, a commit, a test file. If the evidence isn't there, the report says so
+              instead of inventing a plausible-sounding summary.
+            </dd>
+
+            <dt>Test discovery</dt>
+            <dd>
+              Naming-convention, directory-convention, and confirmed-import heuristics find a
+              symbol's related tests — clearly labeled as related tests, never as a measured
+              coverage percentage Borehole doesn't have.
+            </dd>
+
+            <dt>Context export</dt>
+            <dd>
+              --json on every CLI command for scripting, code review, or feeding an AI coding
+              assistant real, evidence-backed context about the code it's about to touch.
+            </dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- 5. Evidence model callout -->
+      <section class="bh-evidence">
+        <div class="bh-wrap bh-evidence__inner">
+          <h2>The evidence model</h2>
+          <pre class="bh-code"><code><span class="bh-code__prompt">$</span> borehole symbol Handler
+class   Handler          billing/handler.ts:1
+class   Handler          shipping/handler.ts:1
+method  Handler.process  billing/handler.ts:2
+method  Handler.process  shipping/handler.ts:2</code></pre>
+          <p>
+            Two unrelated classes happen to share a name. Borehole's reference resolver refuses
+            to guess which one a call site meant — it reports the reference as unresolved at low
+            confidence rather than silently attributing it to one of them.
+          </p>
+        </div>
+      </section>
+
+      <!-- 6. CLI -->
+      <section class="bh-cli bh-section-divider">
+        <div class="bh-wrap">
+          <h2>CLI</h2>
+          <div class="bh-cli-table-wrap">
+            <table class="bh-cli-table">
+              <caption class="bh-visually-hidden">Borehole CLI commands</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Command</th>
+                  <th scope="col">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>borehole analyze &lt;path&gt;</td>
+                  <td>index (or re-index) a repository</td>
+                </tr>
+                <tr>
+                  <td>borehole symbol &lt;name&gt; [repo]</td>
+                  <td>search for a symbol</td>
+                </tr>
+                <tr>
+                  <td>borehole callers &lt;symbol&gt; [repo]</td>
+                  <td>who calls it</td>
+                </tr>
+                <tr>
+                  <td>borehole callees &lt;symbol&gt; [repo]</td>
+                  <td>what it calls</td>
+                </tr>
+                <tr>
+                  <td>borehole impact &lt;target&gt; [repo]</td>
+                  <td>blast radius</td>
+                </tr>
+                <tr>
+                  <td>borehole impact &lt;target&gt; [repo] --before</td>
+                  <td>+ the "before you change this" reading list</td>
+                </tr>
+                <tr>
+                  <td>borehole history &lt;target&gt; [repo]</td>
+                  <td>Git evolution</td>
+                </tr>
+                <tr>
+                  <td>borehole tests &lt;symbol&gt; [repo]</td>
+                  <td>related tests</td>
+                </tr>
+                <tr>
+                  <td>borehole explain &lt;target&gt; [repo]</td>
+                  <td>full evidence-backed profile</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="bh-cli-note">
+            Every subcommand accepts <code>--json</code> for machine-readable output.
+          </p>
+        </div>
+      </section>
+
+      <!-- 7. Privacy / security strip -->
+      <section class="bh-privacy">
+        <div class="bh-wrap bh-privacy__inner">
+          <h2 class="bh-visually-hidden">Privacy and security</h2>
+          <ul>
+            <li>No account. No cloud backend. No telemetry.</li>
+            <li>
+              Reads only the repository you open, plus its local <code>.git</code> directory —
+              read-only, zero network requests by default.
+            </li>
+            <li>
+              All Git access goes through git2/libgit2, never a shell-out — closing off command
+              injection via crafted branch names or commit messages.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 8. Architecture -->
+      <section class="bh-arch bh-section-divider">
+        <div class="bh-wrap bh-wrap--wide">
+          <h2>Architecture</h2>
+          <div class="bh-arch__scroll">
+            <svg viewBox="0 0 760 890" role="img" aria-labelledby="bh-arch-title bh-arch-desc">
+              <title id="bh-arch-title">Borehole engine pipeline</title>
+              <desc id="bh-arch-desc">
+                engine-core feeds engine-parse, which feeds engine-index, which feeds
+                engine-graph. engine-core also feeds engine-git independently. engine-index,
+                engine-graph, and engine-git all feed engine-evidence. engine-evidence feeds
+                the cli binary and the src-tauri desktop IPC layer, which feeds the React and
+                TypeScript UI.
+              </desc>
+              <defs>
+                <marker
+                  id="bh-arrow"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="4"
+                  orient="auto"
+                >
+                  <path d="M0,0 L8,4 L0,8 Z" class="bh-diagram-edge-arrow"></path>
+                </marker>
+              </defs>
+
+              <!-- edges -->
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M380,90 L253,145"></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M380,90 L507,145"></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M250,220 L377,275"></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M380,350 L380,405"></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M380,480 L380,535"></path>
+              <path
+                class="bh-diagram-edge"
+                marker-end="url(#bh-arrow)"
+                d="M230,315 L90,315 L90,575 L205,575"
+              ></path>
+              <path
+                class="bh-diagram-edge"
+                marker-end="url(#bh-arrow)"
+                d="M620,185 L660,185 L660,575 L555,575"
+              ></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M300,610 L253,665"></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M460,610 L507,665"></path>
+              <path class="bh-diagram-edge" marker-end="url(#bh-arrow)" d="M510,740 L383,795"></path>
+
+              <!-- nodes -->
+              <g>
+                <rect class="bh-diagram-box" x="230" y="20" width="300" height="70"></rect>
+                <text class="bh-diagram-name" x="380" y="49" text-anchor="middle">engine-core</text>
+                <text class="bh-diagram-desc" x="380" y="66" text-anchor="middle">
+                  repo access · config · ignore rules
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="140" y="150" width="220" height="70"></rect>
+                <text class="bh-diagram-name" x="250" y="179" text-anchor="middle">engine-parse</text>
+                <text class="bh-diagram-desc" x="250" y="196" text-anchor="middle">
+                  tree-sitter extraction
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="400" y="150" width="220" height="70"></rect>
+                <text class="bh-diagram-name" x="510" y="179" text-anchor="middle">engine-git</text>
+                <text class="bh-diagram-desc" x="510" y="196" text-anchor="middle">
+                  git2 history mining
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="230" y="280" width="300" height="70"></rect>
+                <text class="bh-diagram-name" x="380" y="309" text-anchor="middle">engine-index</text>
+                <text class="bh-diagram-desc" x="380" y="326" text-anchor="middle">
+                  SQLite · reference resolution
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="230" y="410" width="300" height="70"></rect>
+                <text class="bh-diagram-name" x="380" y="439" text-anchor="middle">engine-graph</text>
+                <text class="bh-diagram-desc" x="380" y="456" text-anchor="middle">
+                  traversal algorithms
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box bh-diagram-box--emphasis" x="210" y="540" width="340" height="70"></rect>
+                <text class="bh-diagram-name" x="380" y="569" text-anchor="middle">engine-evidence</text>
+                <text class="bh-diagram-desc" x="380" y="586" text-anchor="middle">
+                  blast radius · before-you-change-this
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="140" y="670" width="220" height="70"></rect>
+                <text class="bh-diagram-name" x="250" y="699" text-anchor="middle">cli</text>
+                <text class="bh-diagram-desc" x="250" y="716" text-anchor="middle">
+                  borehole binary
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="400" y="670" width="220" height="70"></rect>
+                <text class="bh-diagram-name" x="510" y="699" text-anchor="middle">src-tauri</text>
+                <text class="bh-diagram-desc" x="510" y="716" text-anchor="middle">
+                  desktop IPC layer
+                </text>
+              </g>
+
+              <g>
+                <rect class="bh-diagram-box" x="230" y="800" width="300" height="70"></rect>
+                <text class="bh-diagram-name" x="380" y="840" text-anchor="middle">
+                  React / TypeScript UI
+                </text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Supported languages -->
+      <section class="bh-languages bh-section-divider">
+        <div class="bh-wrap">
+          <h2>Supported languages</h2>
+          <ul>
+            <li>Rust</li>
+            <li>TypeScript</li>
+            <li>TSX</li>
+            <li>JavaScript</li>
+            <li>Python</li>
+            <li>Go</li>
+          </ul>
+          <p class="bh-languages__note">v1: full symbol extraction + reference resolution</p>
+        </div>
+      </section>
+
+      <!-- 10. Download -->
+      <section id="download" class="bh-download bh-section-divider">
+        <div class="bh-wrap">
+          <h2>Download</h2>
+          <p>Releases are published on GitHub. No version has been tagged yet.</p>
+          <div class="bh-download__actions">
+            <a
+              class="bh-btn bh-btn--primary"
+              href="https://github.com/levimackay/borehole/releases"
+              rel="noopener"
+              >View Releases on GitHub</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bh-footer">
+      <div class="bh-wrap bh-footer__inner">
+        <ul class="bh-footer__links">
+          <li><a href="https://github.com/levimackay/borehole" rel="noopener">GitHub</a></li>
+          <li>
+            <a href="https://github.com/levimackay/borehole/tree/main/docs" rel="noopener">Docs</a>
+          </li>
+          <li>
+            <a href="https://github.com/levimackay/borehole/blob/main/LICENSE" rel="noopener"
+              >License: MIT</a
+            >
+          </li>
+        </ul>
+        <p class="bh-footer__disclosure">
+          Development of this project includes AI-assisted software engineering using Claude
+          Code. All code is reviewed, tested, and maintained by the project author.
+        </p>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
