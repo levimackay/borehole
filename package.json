@@ -2,6 +2,13 @@
   "name": "borehole",
   "private": true,
   "version": "0.1.0",
+  "description": "Understand unfamiliar code before you change it — local-first codebase intelligence.",
+  "author": "Levi Mackay",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/levimackay/borehole.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
