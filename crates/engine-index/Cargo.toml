@@ -18,3 +18,4 @@ rusqlite = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+engine-graph = { workspace = true }
