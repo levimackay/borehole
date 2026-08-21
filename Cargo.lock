@@ -368,6 +368,11 @@ dependencies = [
 name = "borehole-desktop"
 version = "0.1.0"
 dependencies = [
+ "engine-core",
+ "engine-evidence",
+ "engine-git",
+ "engine-graph",
+ "engine-index",
  "serde",
  "serde_json",
  "tauri",
