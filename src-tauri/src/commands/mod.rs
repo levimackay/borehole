@@ -189,6 +189,28 @@ pub fn get_related_tests(
     with_open_repo(&state, |open| Ok(open.evidence().related_tests(id)?))
 }
 
+/// Resolves a user-typed target to a `SymbolId`: exact-match search, top
+/// result wins. Mirrors `crates/cli/src/commands.rs`'s
+/// `resolve_target_to_symbol` — small enough that duplicating it here beats
+/// threading a shared helper across the CLI/desktop crate boundary for one
+/// function.
+fn resolve_target(index: &Index, target: &str) -> CommandResult<SymbolId> {
+    index
+        .search_symbols(target, 1)?
+        .into_iter()
+        .next()
+        .map(|s| s.id)
+        .ok_or_else(|| CommandError {
+            message: format!("no symbol matching '{target}'"),
+        })
+}
+
+/// Bundles everything the evidence engine knows about one symbol —
+/// profile, blast radius, and the before-you-change-this reading list —
+/// into a single document, for pasting into a code review, an issue, or an
+/// AI coding assistant's context window (brief section 29: "Export
+/// Context"). Every fact in the output already came from `EvidenceEngine`;
+/// this function only selects and formats it, never adds new claims.
 #[tauri::command]
 pub fn export_context(
     path_or_symbol: String,
@@ -196,14 +218,104 @@ pub fn export_context(
     state: State<'_, AppState>,
 ) -> CommandResult<String> {
     with_open_repo(&state, |open| {
-        let _ = &open.repo;
+        let id = resolve_target(&open.index, &path_or_symbol)?;
+        let evidence = open.evidence();
+        let profile = evidence.symbol_profile(id)?;
+        let before = evidence.before_you_change_this(id)?;
+
         match format.as_str() {
-            "json" | "md" => Err(CommandError {
-                message: format!("export_context({path_or_symbol}, {format}) not yet implemented"),
-            }),
+            "json" => {
+                #[derive(serde::Serialize)]
+                struct ExportBundle {
+                    profile: engine_evidence::SymbolProfile,
+                    before_you_change_this: engine_evidence::BeforeYouChangeThisReport,
+                }
+                let bundle = ExportBundle {
+                    profile,
+                    before_you_change_this: before,
+                };
+                serde_json::to_string_pretty(&bundle).map_err(CommandError::from)
+            }
+            "md" => Ok(render_context_markdown(&profile, &before)),
             other => Err(CommandError {
-                message: format!("unknown export format '{other}'"),
+                message: format!("unknown export format '{other}' (expected 'md' or 'json')"),
             }),
         }
     })
+}
+
+fn render_context_markdown(
+    profile: &engine_evidence::SymbolProfile,
+    before: &engine_evidence::BeforeYouChangeThisReport,
+) -> String {
+    use std::fmt::Write;
+    let s = &profile.symbol;
+    let mut out = String::new();
+    let _ = writeln!(out, "# {} ({})", s.qualified_name, s.kind);
+    let _ = writeln!(out, "\n`{}:{}`\n", s.file, s.span.start_line);
+    if let Some(sig) = &s.signature {
+        let _ = writeln!(out, "```\n{sig}\n```\n");
+    }
+    if let Some(doc) = &s.doc_comment {
+        let _ = writeln!(out, "{doc}\n");
+    }
+
+    let _ = writeln!(out, "## Evidence");
+    let _ = writeln!(out, "- Direct callers: {}", profile.direct_callers);
+    let _ = writeln!(out, "- Indirect callers: {}", profile.indirect_callers);
+    let _ = writeln!(out, "- Related tests: {}", profile.tests.len());
+    if let Some(commit) = &profile.introduced {
+        let _ = writeln!(
+            out,
+            "- Introduced in commit `{}`: {}",
+            &commit.sha[..commit.sha.len().min(7)],
+            commit.summary
+        );
+    }
+    let _ = writeln!(
+        out,
+        "- Modification count: {}\n",
+        profile.modification_count
+    );
+
+    let _ = writeln!(out, "## Before you change this");
+    if before.reading_list.is_empty() {
+        let _ = writeln!(
+            out,
+            "No specific reading list items — see blast radius below.\n"
+        );
+    } else {
+        for item in &before.reading_list {
+            let _ = writeln!(out, "1. **{}** — {}", item.symbol_or_file, item.why);
+        }
+        out.push('\n');
+    }
+
+    let br = &before.blast_radius;
+    let _ = writeln!(out, "## Blast radius");
+    let _ = writeln!(out, "- Risk: **{}**", br.risk.to_string().to_uppercase());
+    for reason in &br.risk_reasons {
+        let _ = writeln!(out, "  - {}", reason.text);
+    }
+    let _ = writeln!(
+        out,
+        "- Public API: {}",
+        if br.is_public_api { "yes" } else { "no" }
+    );
+    let _ = writeln!(out, "- Test suites: {}\n", br.test_suites);
+
+    if !before.historical_warnings.is_empty() {
+        let _ = writeln!(out, "## Historical warnings");
+        for w in &before.historical_warnings {
+            let _ = writeln!(out, "- {}", w.text);
+        }
+        out.push('\n');
+    }
+
+    let _ = writeln!(
+        out,
+        "*Confidence: {}. Generated by Borehole — evidence-backed, not fabricated.*",
+        before.confidence
+    );
+    out
 }
