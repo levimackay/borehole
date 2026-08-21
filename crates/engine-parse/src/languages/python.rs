@@ -50,7 +50,7 @@ impl LanguageExtractor for PythonExtractor {
         };
 
         walk_block(root, source, None, &mut result);
-        walk_refs(root, source, None, &mut result.references);
+        walk_refs(root, source, &mut result.references);
 
         Ok(result)
     }
@@ -159,7 +159,13 @@ fn push_function(node: Node, source: &str, qualifier: Option<&str>, out: &mut Pa
     push_signature_type_usages(node, source, &name, &mut out.references);
 }
 
-fn push_class(node: Node, source: &str, qualifier: Option<&str>, out: &mut ParseResult) {
+fn push_class<'a>(
+    node: Node<'a>,
+    source: &str,
+    qualifier: Option<&str>,
+    out: &mut ParseResult,
+    queue: &mut Vec<(Node<'a>, Option<String>)>,
+) {
     let Some(name) = field_text(node, "name", source) else {
         return;
     };
@@ -187,8 +193,11 @@ fn push_class(node: Node, source: &str, qualifier: Option<&str>, out: &mut Parse
         }
     }
     if let Some(body) = node.child_by_field_name("body") {
-        let new_qualifier = qualify(qualifier, &name);
-        walk_block(body, source, Some(&new_qualifier), out);
+        // Classes can nest arbitrarily deeply in adversarial input
+        // (`class A:\n class A:\n ...`); queue the body instead of
+        // recursing directly into `walk_block` to avoid a native stack
+        // overflow. See `walk_refs`'s doc comment for the full rationale.
+        queue.push((body, Some(qualify(qualifier, &name))));
     }
 }
 
@@ -222,7 +231,22 @@ fn push_assignment(stmt: Node, source: &str, qualifier: Option<&str>, out: &mut 
     });
 }
 
+/// Driver: see `push_class`'s comment on why nested class bodies are queued
+/// rather than recursed into directly.
 fn walk_block(container: Node, source: &str, qualifier: Option<&str>, out: &mut ParseResult) {
+    let mut queue: Vec<(Node, Option<String>)> = vec![(container, qualifier.map(str::to_string))];
+    while let Some((container, qualifier)) = queue.pop() {
+        walk_block_one_level(container, source, qualifier.as_deref(), out, &mut queue);
+    }
+}
+
+fn walk_block_one_level<'a>(
+    container: Node<'a>,
+    source: &str,
+    qualifier: Option<&str>,
+    out: &mut ParseResult,
+    queue: &mut Vec<(Node<'a>, Option<String>)>,
+) {
     let mut cursor = container.walk();
     let children: Vec<Node> = container.named_children(&mut cursor).collect();
     for child in children {
@@ -230,12 +254,12 @@ fn walk_block(container: Node, source: &str, qualifier: Option<&str>, out: &mut 
             "import_statement" => extract_import_plain(child, source, &mut out.imports),
             "import_from_statement" => extract_import_from(child, source, &mut out.imports),
             "function_definition" => push_function(child, source, qualifier, out),
-            "class_definition" => push_class(child, source, qualifier, out),
+            "class_definition" => push_class(child, source, qualifier, out, queue),
             "decorated_definition" => {
                 if let Some(def) = child.child_by_field_name("definition") {
                     match def.kind() {
                         "function_definition" => push_function(def, source, qualifier, out),
-                        "class_definition" => push_class(def, source, qualifier, out),
+                        "class_definition" => push_class(def, source, qualifier, out, queue),
                         _ => {}
                     }
                 }
@@ -336,37 +360,45 @@ fn call_target<'a>(function_node: Node<'a>, source: &'a str) -> &'a str {
     }
 }
 
-fn walk_refs(node: Node, source: &str, current: Option<&str>, refs: &mut Vec<ParsedReference>) {
-    let next_current: Option<String> = match node.kind() {
-        "function_definition" => field_text(node, "name", source).map(|s| s.to_string()),
-        _ => current.map(|s| s.to_string()),
-    };
-    let next_ref = next_current.as_deref().or(current);
+/// Iterative (explicit-stack) traversal — deliberately not natural
+/// recursion; see the identical rationale on `walk_refs` in `rust.rs`.
+/// Deeply nested Python expressions (nested calls, parenthesized groups)
+/// are adversarial input that would otherwise blow the native call stack
+/// and abort the process.
+fn walk_refs(root: Node, source: &str, refs: &mut Vec<ParsedReference>) {
+    let mut stack: Vec<(Node, Option<String>)> = vec![(root, None)];
+    while let Some((node, current)) = stack.pop() {
+        let next_current: Option<String> = match node.kind() {
+            "function_definition" => field_text(node, "name", source).map(|s| s.to_string()),
+            _ => current,
+        };
 
-    if node.kind() == "call" {
-        if let Some(func) = node.child_by_field_name("function") {
-            let to_name = call_target(func, source);
-            let looks_like_class = to_name
-                .chars()
-                .next()
-                .map(char::is_uppercase)
-                .unwrap_or(false);
-            refs.push(ParsedReference {
-                from_span: span_of(node),
-                from_symbol_name: next_ref.map(|s| s.to_string()),
-                to_name: to_name.to_string(),
-                kind: if looks_like_class {
-                    ReferenceKind::Instantiation
-                } else {
-                    ReferenceKind::Call
-                },
-            });
+        if node.kind() == "call" {
+            if let Some(func) = node.child_by_field_name("function") {
+                let to_name = call_target(func, source);
+                let looks_like_class = to_name
+                    .chars()
+                    .next()
+                    .map(char::is_uppercase)
+                    .unwrap_or(false);
+                refs.push(ParsedReference {
+                    from_span: span_of(node),
+                    from_symbol_name: next_current.clone(),
+                    to_name: to_name.to_string(),
+                    kind: if looks_like_class {
+                        ReferenceKind::Instantiation
+                    } else {
+                        ReferenceKind::Call
+                    },
+                });
+            }
         }
-    }
 
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        walk_refs(child, source, next_ref, refs);
+        let mut cursor = node.walk();
+        let children: Vec<Node> = node.named_children(&mut cursor).collect();
+        for child in children.into_iter().rev() {
+            stack.push((child, next_current.clone()));
+        }
     }
 }
 

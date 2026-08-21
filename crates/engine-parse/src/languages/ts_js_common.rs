@@ -57,7 +57,7 @@ pub(crate) fn extract(
     };
 
     walk_statements(root, source, None, is_typescript, &mut result);
-    walk_refs(root, source, None, &mut result.references);
+    walk_refs(root, source, &mut result.references);
 
     Ok(result)
 }
@@ -507,52 +507,60 @@ fn call_target<'a>(function_node: Node<'a>, source: &'a str) -> &'a str {
     }
 }
 
-fn walk_refs(node: Node, source: &str, current: Option<&str>, refs: &mut Vec<ParsedReference>) {
-    let next_current: Option<String> = match node.kind() {
-        "function_declaration" | "method_definition" => {
-            field_text(node, "name", source).map(|s| s.to_string())
-        }
-        "variable_declarator" => {
-            let value_kind = node.child_by_field_name("value").map(|v| v.kind());
-            if matches!(
-                value_kind,
-                Some("arrow_function") | Some("function_expression") | Some("function")
-            ) {
+/// Iterative (explicit-stack) traversal — deliberately not natural
+/// recursion; see the identical rationale on `walk_refs` in `rust.rs`. JS/TS
+/// expressions (deeply nested ternaries, calls, parenthesized groups) are
+/// exactly the kind of adversarial input that would otherwise blow the
+/// native call stack and abort the process.
+fn walk_refs(root: Node, source: &str, refs: &mut Vec<ParsedReference>) {
+    let mut stack: Vec<(Node, Option<String>)> = vec![(root, None)];
+    while let Some((node, current)) = stack.pop() {
+        let next_current: Option<String> = match node.kind() {
+            "function_declaration" | "method_definition" => {
                 field_text(node, "name", source).map(|s| s.to_string())
-            } else {
-                current.map(|s| s.to_string())
             }
-        }
-        _ => current.map(|s| s.to_string()),
-    };
-    let next_ref = next_current.as_deref().or(current);
+            "variable_declarator" => {
+                let value_kind = node.child_by_field_name("value").map(|v| v.kind());
+                if matches!(
+                    value_kind,
+                    Some("arrow_function") | Some("function_expression") | Some("function")
+                ) {
+                    field_text(node, "name", source).map(|s| s.to_string())
+                } else {
+                    current
+                }
+            }
+            _ => current,
+        };
 
-    match node.kind() {
-        "call_expression" => {
-            if let Some(func) = node.child_by_field_name("function") {
-                refs.push(ParsedReference {
-                    from_span: span_of(node),
-                    from_symbol_name: next_ref.map(|s| s.to_string()),
-                    to_name: call_target(func, source).to_string(),
-                    kind: ReferenceKind::Call,
-                });
+        match node.kind() {
+            "call_expression" => {
+                if let Some(func) = node.child_by_field_name("function") {
+                    refs.push(ParsedReference {
+                        from_span: span_of(node),
+                        from_symbol_name: next_current.clone(),
+                        to_name: call_target(func, source).to_string(),
+                        kind: ReferenceKind::Call,
+                    });
+                }
             }
-        }
-        "new_expression" => {
-            if let Some(ctor) = node.child_by_field_name("constructor") {
-                refs.push(ParsedReference {
-                    from_span: span_of(node),
-                    from_symbol_name: next_ref.map(|s| s.to_string()),
-                    to_name: node_text(ctor, source).to_string(),
-                    kind: ReferenceKind::Instantiation,
-                });
+            "new_expression" => {
+                if let Some(ctor) = node.child_by_field_name("constructor") {
+                    refs.push(ParsedReference {
+                        from_span: span_of(node),
+                        from_symbol_name: next_current.clone(),
+                        to_name: node_text(ctor, source).to_string(),
+                        kind: ReferenceKind::Instantiation,
+                    });
+                }
             }
+            _ => {}
         }
-        _ => {}
-    }
 
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        walk_refs(child, source, next_ref, refs);
+        let mut cursor = node.walk();
+        let children: Vec<Node> = node.named_children(&mut cursor).collect();
+        for child in children.into_iter().rev() {
+            stack.push((child, next_current.clone()));
+        }
     }
 }

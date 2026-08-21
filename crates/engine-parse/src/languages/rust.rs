@@ -49,7 +49,7 @@ impl LanguageExtractor for RustExtractor {
         };
 
         walk_items(root, source, None, false, &mut result);
-        walk_refs(root, source, None, &mut result.references);
+        walk_refs(root, source, &mut result.references);
 
         Ok(result)
     }
@@ -135,13 +135,40 @@ fn push_signature_type_usages(
     }
 }
 
-#[allow(clippy::too_many_lines)]
+/// Driver: `mod`/`impl`/`trait` bodies can nest arbitrarily deeply
+/// (`mod a { mod a { mod a { ... } } }`), and tree-sitter parses that fine —
+/// so the per-container work below runs off an explicit queue rather than
+/// recursing, exactly like `walk_refs`, to avoid a native stack overflow on
+/// adversarial input. See `walk_refs`'s doc comment for the full rationale.
 fn walk_items(
     container: Node,
     source: &str,
     qualifier: Option<&str>,
     container_exported: bool,
     out: &mut ParseResult,
+) {
+    let mut queue: Vec<(Node, Option<String>, bool)> =
+        vec![(container, qualifier.map(str::to_string), container_exported)];
+    while let Some((container, qualifier, container_exported)) = queue.pop() {
+        walk_items_one_level(
+            container,
+            source,
+            qualifier.as_deref(),
+            container_exported,
+            out,
+            &mut queue,
+        );
+    }
+}
+
+#[allow(clippy::too_many_lines)]
+fn walk_items_one_level<'a>(
+    container: Node<'a>,
+    source: &str,
+    qualifier: Option<&str>,
+    container_exported: bool,
+    out: &mut ParseResult,
+    queue: &mut Vec<(Node<'a>, Option<String>, bool)>,
 ) {
     let mut cursor = container.walk();
     let children: Vec<Node> = container.named_children(&mut cursor).collect();
@@ -227,13 +254,7 @@ fn walk_items(
                     signature: Some(signature_before_field(child, source, &["body"])),
                 });
                 if let Some(body) = child.child_by_field_name("body") {
-                    walk_items(
-                        body,
-                        source,
-                        Some(&qualify(qualifier, &name)),
-                        exported,
-                        out,
-                    );
+                    queue.push((body, Some(qualify(qualifier, &name)), exported));
                 }
             }
             "impl_item" => {
@@ -257,13 +278,7 @@ fn walk_items(
                     // see the trait's definition from a single-file parse.
                     // Inherent-impl methods (no `trait` field) always need
                     // their own explicit `pub`.
-                    walk_items(
-                        body,
-                        source,
-                        Some(&qualify(qualifier, &type_name)),
-                        is_trait_impl,
-                        out,
-                    );
+                    queue.push((body, Some(qualify(qualifier, &type_name)), is_trait_impl));
                 }
             }
             "enum_item" => {
@@ -333,7 +348,7 @@ fn walk_items(
                     // A module's own `pub` controls whether the module is
                     // importable, not whether items inside it are exported —
                     // each item still needs its own `pub`.
-                    walk_items(body, source, Some(&qualify(qualifier, &name)), false, out);
+                    queue.push((body, Some(qualify(qualifier, &name)), false));
                 }
             }
             "use_declaration" => extract_use(child, source, &mut out.imports),
@@ -380,6 +395,9 @@ fn extract_use(decl: Node, source: &str, imports: &mut Vec<ImportEdge>) {
     extract_use_tree(argument, None, source, span, imports);
 }
 
+/// Iterative (explicit-stack) traversal — `use a::{b::{c::{...}}}` groups
+/// can nest arbitrarily deeply in adversarial input; see `walk_refs`'s doc
+/// comment for the stack-overflow rationale this avoids.
 fn extract_use_tree(
     node: Node,
     prefix: Option<String>,
@@ -387,71 +405,76 @@ fn extract_use_tree(
     span: engine_core::Span,
     imports: &mut Vec<ImportEdge>,
 ) {
-    match node.kind() {
-        "identifier" | "self" | "crate" | "super" => {
-            let name = node_text(node, source).to_string();
-            // A bare leaf with no enclosing `{...}` group has no separate
-            // "module it's imported from" distinct from itself (`use foo;`
-            // binds `foo`) — the module IS the name in that case.
-            let module = prefix.clone().unwrap_or_else(|| name.clone());
-            imports.push(ImportEdge {
-                local_name: name.clone(),
-                source_module: module,
-                imported_name: name,
-                span,
-            });
-        }
-        "scoped_identifier" => {
-            let (leading, name) = split_leaf_path(node, source);
-            let module = module_for(prefix.as_deref(), leading, name);
-            imports.push(ImportEdge {
-                local_name: name.to_string(),
-                source_module: module,
-                imported_name: name.to_string(),
-                span,
-            });
-        }
-        "use_as_clause" => {
-            let Some(path) = node.child_by_field_name("path") else {
-                return;
-            };
-            let alias = field_name_text(node, "alias", source)
-                .unwrap_or("")
-                .to_string();
-            let (leading, name) = split_leaf_path(path, source);
-            let module = module_for(prefix.as_deref(), leading, name);
-            imports.push(ImportEdge {
-                local_name: alias,
-                source_module: module,
-                imported_name: name.to_string(),
-                span,
-            });
-        }
-        "scoped_use_list" => {
-            let Some(path) = node.child_by_field_name("path") else {
-                return;
-            };
-            let path_text = node_text(path, source).to_string();
-            let new_prefix = match &prefix {
-                Some(p) => format!("{p}::{path_text}"),
-                None => path_text,
-            };
-            if let Some(list) = node.child_by_field_name("list") {
-                let mut cursor = list.walk();
-                for item in list.named_children(&mut cursor) {
-                    extract_use_tree(item, Some(new_prefix.clone()), source, span, imports);
+    let mut stack: Vec<(Node, Option<String>)> = vec![(node, prefix)];
+    while let Some((node, prefix)) = stack.pop() {
+        match node.kind() {
+            "identifier" | "self" | "crate" | "super" => {
+                let name = node_text(node, source).to_string();
+                // A bare leaf with no enclosing `{...}` group has no separate
+                // "module it's imported from" distinct from itself (`use foo;`
+                // binds `foo`) — the module IS the name in that case.
+                let module = prefix.clone().unwrap_or_else(|| name.clone());
+                imports.push(ImportEdge {
+                    local_name: name.clone(),
+                    source_module: module,
+                    imported_name: name,
+                    span,
+                });
+            }
+            "scoped_identifier" => {
+                let (leading, name) = split_leaf_path(node, source);
+                let module = module_for(prefix.as_deref(), leading, name);
+                imports.push(ImportEdge {
+                    local_name: name.to_string(),
+                    source_module: module,
+                    imported_name: name.to_string(),
+                    span,
+                });
+            }
+            "use_as_clause" => {
+                let Some(path) = node.child_by_field_name("path") else {
+                    continue;
+                };
+                let alias = field_name_text(node, "alias", source)
+                    .unwrap_or("")
+                    .to_string();
+                let (leading, name) = split_leaf_path(path, source);
+                let module = module_for(prefix.as_deref(), leading, name);
+                imports.push(ImportEdge {
+                    local_name: alias,
+                    source_module: module,
+                    imported_name: name.to_string(),
+                    span,
+                });
+            }
+            "scoped_use_list" => {
+                let Some(path) = node.child_by_field_name("path") else {
+                    continue;
+                };
+                let path_text = node_text(path, source).to_string();
+                let new_prefix = match &prefix {
+                    Some(p) => format!("{p}::{path_text}"),
+                    None => path_text,
+                };
+                if let Some(list) = node.child_by_field_name("list") {
+                    let mut cursor = list.walk();
+                    let items: Vec<Node> = list.named_children(&mut cursor).collect();
+                    for item in items.into_iter().rev() {
+                        stack.push((item, Some(new_prefix.clone())));
+                    }
                 }
             }
-        }
-        "use_list" => {
-            let mut cursor = node.walk();
-            for item in node.named_children(&mut cursor) {
-                extract_use_tree(item, prefix.clone(), source, span, imports);
+            "use_list" => {
+                let mut cursor = node.walk();
+                let items: Vec<Node> = node.named_children(&mut cursor).collect();
+                for item in items.into_iter().rev() {
+                    stack.push((item, prefix.clone()));
+                }
             }
+            // `use foo::*;` — no concrete local binding to record.
+            "use_wildcard" => {}
+            _ => {}
         }
-        // `use foo::*;` — no concrete local binding to record.
-        "use_wildcard" => {}
-        _ => {}
     }
 }
 
@@ -463,42 +486,54 @@ fn call_target<'a>(function_node: Node<'a>, source: &'a str) -> &'a str {
     }
 }
 
-fn walk_refs(node: Node, source: &str, current: Option<&str>, refs: &mut Vec<ParsedReference>) {
-    let next_current: Option<String> = match node.kind() {
-        "function_item" | "function_signature_item" => {
-            field_name_text(node, "name", source).map(|s| s.to_string())
-        }
-        _ => current.map(|s| s.to_string()),
-    };
-    let next_ref = next_current.as_deref().or(current);
-
-    match node.kind() {
-        "call_expression" => {
-            if let Some(func) = node.child_by_field_name("function") {
-                refs.push(ParsedReference {
-                    from_span: span_of(node),
-                    from_symbol_name: next_ref.map(|s| s.to_string()),
-                    to_name: call_target(func, source).to_string(),
-                    kind: ReferenceKind::Call,
-                });
+/// Iterative (explicit-stack) traversal — deliberately not natural
+/// recursion. A malicious source file can nest expressions arbitrarily
+/// deeply (e.g. hundreds of thousands of parenthesized calls); tree-sitter
+/// itself parses that fine, but a recursive-descent walk over the resulting
+/// tree would blow the native call stack and abort the whole process, which
+/// is an unrecoverable crash rather than a graceful per-file parse error —
+/// exactly the adversarial-content DoS this engine's threat model rules
+/// out. See the sibling `walk_refs` in `python.rs`/`go.rs`/`ts_js_common.rs`
+/// for the same fix.
+fn walk_refs(root: Node, source: &str, refs: &mut Vec<ParsedReference>) {
+    let mut stack: Vec<(Node, Option<String>)> = vec![(root, None)];
+    while let Some((node, current)) = stack.pop() {
+        let next_current: Option<String> = match node.kind() {
+            "function_item" | "function_signature_item" => {
+                field_name_text(node, "name", source).map(|s| s.to_string())
             }
-        }
-        "struct_expression" => {
-            if let Some(name) = node.child_by_field_name("name") {
-                refs.push(ParsedReference {
-                    from_span: span_of(node),
-                    from_symbol_name: next_ref.map(|s| s.to_string()),
-                    to_name: node_text(name, source).to_string(),
-                    kind: ReferenceKind::Instantiation,
-                });
-            }
-        }
-        _ => {}
-    }
+            _ => current,
+        };
 
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        walk_refs(child, source, next_ref, refs);
+        match node.kind() {
+            "call_expression" => {
+                if let Some(func) = node.child_by_field_name("function") {
+                    refs.push(ParsedReference {
+                        from_span: span_of(node),
+                        from_symbol_name: next_current.clone(),
+                        to_name: call_target(func, source).to_string(),
+                        kind: ReferenceKind::Call,
+                    });
+                }
+            }
+            "struct_expression" => {
+                if let Some(name) = node.child_by_field_name("name") {
+                    refs.push(ParsedReference {
+                        from_span: span_of(node),
+                        from_symbol_name: next_current.clone(),
+                        to_name: node_text(name, source).to_string(),
+                        kind: ReferenceKind::Instantiation,
+                    });
+                }
+            }
+            _ => {}
+        }
+
+        let mut cursor = node.walk();
+        let children: Vec<Node> = node.named_children(&mut cursor).collect();
+        for child in children.into_iter().rev() {
+            stack.push((child, next_current.clone()));
+        }
     }
 }
 

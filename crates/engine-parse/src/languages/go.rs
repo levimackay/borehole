@@ -50,7 +50,7 @@ impl LanguageExtractor for GoExtractor {
         };
 
         walk_top_level(root, source, &mut result);
-        walk_refs(root, source, None, &mut result.references);
+        walk_refs(root, source, &mut result.references);
 
         Ok(result)
     }
@@ -357,44 +357,52 @@ fn call_target<'a>(function_node: Node<'a>, source: &'a str) -> &'a str {
     }
 }
 
-fn walk_refs(node: Node, source: &str, current: Option<&str>, refs: &mut Vec<ParsedReference>) {
-    let next_current: Option<String> = match node.kind() {
-        "function_declaration" | "method_declaration" => {
-            field_text(node, "name", source).map(|s| s.to_string())
-        }
-        _ => current.map(|s| s.to_string()),
-    };
-    let next_ref = next_current.as_deref().or(current);
-
-    match node.kind() {
-        "call_expression" => {
-            if let Some(func) = node.child_by_field_name("function") {
-                refs.push(ParsedReference {
-                    from_span: span_of(node),
-                    from_symbol_name: next_ref.map(|s| s.to_string()),
-                    to_name: call_target(func, source).to_string(),
-                    kind: ReferenceKind::Call,
-                });
+/// Iterative (explicit-stack) traversal — deliberately not natural
+/// recursion; see the identical rationale on `walk_refs` in `rust.rs`.
+/// Deeply nested Go expressions (nested calls, parenthesized groups) are
+/// adversarial input that would otherwise blow the native call stack and
+/// abort the process.
+fn walk_refs(root: Node, source: &str, refs: &mut Vec<ParsedReference>) {
+    let mut stack: Vec<(Node, Option<String>)> = vec![(root, None)];
+    while let Some((node, current)) = stack.pop() {
+        let next_current: Option<String> = match node.kind() {
+            "function_declaration" | "method_declaration" => {
+                field_text(node, "name", source).map(|s| s.to_string())
             }
-        }
-        "composite_literal" => {
-            if let Some(ty) = node.child_by_field_name("type") {
-                if ty.kind() == "type_identifier" {
+            _ => current,
+        };
+
+        match node.kind() {
+            "call_expression" => {
+                if let Some(func) = node.child_by_field_name("function") {
                     refs.push(ParsedReference {
                         from_span: span_of(node),
-                        from_symbol_name: next_ref.map(|s| s.to_string()),
-                        to_name: node_text(ty, source).to_string(),
-                        kind: ReferenceKind::Instantiation,
+                        from_symbol_name: next_current.clone(),
+                        to_name: call_target(func, source).to_string(),
+                        kind: ReferenceKind::Call,
                     });
                 }
             }
+            "composite_literal" => {
+                if let Some(ty) = node.child_by_field_name("type") {
+                    if ty.kind() == "type_identifier" {
+                        refs.push(ParsedReference {
+                            from_span: span_of(node),
+                            from_symbol_name: next_current.clone(),
+                            to_name: node_text(ty, source).to_string(),
+                            kind: ReferenceKind::Instantiation,
+                        });
+                    }
+                }
+            }
+            _ => {}
         }
-        _ => {}
-    }
 
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        walk_refs(child, source, next_ref, refs);
+        let mut cursor = node.walk();
+        let children: Vec<Node> = node.named_children(&mut cursor).collect();
+        for child in children.into_iter().rev() {
+            stack.push((child, next_current.clone()));
+        }
     }
 }
 

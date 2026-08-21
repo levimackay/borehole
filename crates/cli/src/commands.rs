@@ -72,10 +72,10 @@ pub fn run(command: Command, json: bool) -> anyhow::Result<()> {
             let id = resolve_target_to_symbol(&index, &target)?;
             if before {
                 let report = evidence.before_you_change_this(id)?;
-                emit(&report, json, |r| print_before_you_change_this(r))
+                emit(&report, json, print_before_you_change_this)
             } else {
                 let report = evidence.blast_radius(id)?;
-                emit(&report, json, |r| print_blast_radius(r))
+                emit(&report, json, print_blast_radius)
             }
         }
         Command::History { target, repo } => {

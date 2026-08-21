@@ -235,19 +235,8 @@ impl fmt::Display for RiskTier {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum EvidenceRef {
-    Reference {
-        file: RepoPath,
-        span: Span,
-    },
-    Commit {
-        sha: String,
-        summary: String,
-    },
-    TestFile {
-        file: RepoPath,
-    },
-    ConfigFile {
-        file: RepoPath,
-        key: Option<String>,
-    },
+    Reference { file: RepoPath, span: Span },
+    Commit { sha: String, summary: String },
+    TestFile { file: RepoPath },
+    ConfigFile { file: RepoPath, key: Option<String> },
 }

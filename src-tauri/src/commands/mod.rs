@@ -100,6 +100,14 @@ pub fn reindex(
     Ok(summary)
 }
 
+/// Hard ceiling on `search_symbols`'s `limit`, independent of whatever the
+/// caller asks for. The query itself is safely parameterized (no injection
+/// risk), but with no cap a caller on the IPC boundary could request an
+/// enormous limit — SQLite treats a negative `LIMIT` (e.g. `usize::MAX` cast
+/// to `i64`, which wraps negative) as "no limit at all" — and force the
+/// whole matching symbol table back across IPC on a large repo.
+const MAX_SEARCH_LIMIT: usize = 500;
+
 #[tauri::command]
 pub fn search_symbols(
     query: String,
@@ -107,7 +115,8 @@ pub fn search_symbols(
     state: State<'_, AppState>,
 ) -> CommandResult<Vec<engine_core::Symbol>> {
     with_open_repo(&state, |open| {
-        Ok(open.index.search_symbols(&query, limit.unwrap_or(25))?)
+        let limit = limit.unwrap_or(25).min(MAX_SEARCH_LIMIT);
+        Ok(open.index.search_symbols(&query, limit)?)
     })
 }
 
