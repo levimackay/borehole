@@ -20,10 +20,13 @@ manual downloads; required before shipping an auto-updater to users).
 
 ## macOS code signing + notarization
 
-Without an Apple Developer certificate, macOS builds are ad-hoc signed
-(`signingIdentity: "-"` — see `src-tauri/tauri.conf.json`), which avoids the
-"app is damaged" Gatekeeper error on Apple Silicon but does not remove the
-"unidentified developer" warning, and does not notarize the app.
+`src-tauri/tauri.conf.json` sets no `macOS.signingIdentity`, so without
+`APPLE_SIGNING_IDENTITY` present Tauri falls back to its default ad-hoc
+signing. This avoids the "app is damaged" Gatekeeper error on Apple
+Silicon but does not remove the "unidentified developer" warning, and
+does not notarize the app. Verified locally: `npm run tauri build`
+produces a working, ad-hoc-signed `Borehole.app` and `.dmg` with the
+config as-is today.
 
 Requires a paid Apple Developer account ($99/year).
 
