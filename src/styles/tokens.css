@@ -34,11 +34,17 @@
   --bh-bg-selected: #2a3038;
 
   --bh-border: #2a2e35;
-  --bh-border-strong: #3b414b;
+  /* #3b414b measured 1.8:1 against panel/canvas — fails WCAG 1.4.11 (3:1)
+     for the interactive elements that rely on it as their only visible
+     boundary (e.g. AsyncSection retry button). Lightened to clear 3:1. */
+  --bh-border-strong: #6a717c;
 
   --bh-text-primary: #e4e6ea;
   --bh-text-secondary: #9aa1ac;
-  --bh-text-muted: #666d78;
+  /* #666d78 measured ~3.3-3.5:1 against panel/canvas — fails WCAG 1.4.3
+     (4.5:1) for the normal-size text it's used for throughout the app
+     (metadata, empty states, muted captions). Lightened to clear 4.5:1. */
+  --bh-text-muted: #7d848f;
 
   --bh-accent: #4fb3ac;
   --bh-accent-strong: #6ecac3;
@@ -80,13 +86,17 @@
     --bh-bg-selected: #dfe6e5;
 
     --bh-border: #d8d8d4;
-    --bh-border-strong: #bcbcb6;
+    /* see dark-theme comment: #bcbcb6 measured ~1.7-1.9:1, fails 1.4.11 */
+    --bh-border-strong: #858888;
 
     --bh-text-primary: #1b1d1f;
     --bh-text-secondary: #565b60;
-    --bh-text-muted: #82868c;
+    /* see dark-theme comment: #82868c measured ~3.3-3.5:1, fails 1.4.3 */
+    --bh-text-muted: #6c7076;
 
-    --bh-accent: #2c8078;
+    /* #2c8078 measured 4.27:1 as text and 4.47:1 as button fill against its
+       fg color — both fail WCAG 1.4.3 (4.5:1). Darkened to clear it. */
+    --bh-accent: #287c74;
     --bh-accent-strong: #226961;
     --bh-accent-fg: #f2fbfa;
 
@@ -123,13 +133,13 @@
   --bh-bg-selected: #dfe6e5;
 
   --bh-border: #d8d8d4;
-  --bh-border-strong: #bcbcb6;
+  --bh-border-strong: #858888;
 
   --bh-text-primary: #1b1d1f;
   --bh-text-secondary: #565b60;
-  --bh-text-muted: #82868c;
+  --bh-text-muted: #6c7076;
 
-  --bh-accent: #2c8078;
+  --bh-accent: #287c74;
   --bh-accent-strong: #226961;
   --bh-accent-fg: #f2fbfa;
 

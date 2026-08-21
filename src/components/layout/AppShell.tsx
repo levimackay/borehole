@@ -1,5 +1,5 @@
 import { useAppState, type ViewId } from "../../state/AppStateContext";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, VIEW_PANEL_ID } from "./Sidebar";
 import { IndexingStatusBar } from "./IndexingStatusBar";
 import { CommandPalette } from "../CommandPalette";
 import { ExplorerView } from "../../views/ExplorerView";
@@ -19,7 +19,15 @@ export function AppShell() {
       <Sidebar />
       <div className="bh-app-shell__main-column">
         {repo && <IndexingStatusBar />}
-        <main className="bh-app-shell__main">{renderView(view)}</main>
+        <main
+          id={VIEW_PANEL_ID}
+          className="bh-app-shell__main"
+          role="tabpanel"
+          aria-labelledby={`bh-tab-${view}`}
+          tabIndex={-1}
+        >
+          {renderView(view)}
+        </main>
       </div>
       <CommandPalette />
     </div>

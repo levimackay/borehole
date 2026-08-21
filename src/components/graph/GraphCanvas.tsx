@@ -50,6 +50,7 @@ export function GraphCanvas({ graph }: { graph: DependencyGraph }) {
     const flowNodes: Node[] = [];
     for (const [depth, group] of byDepth) {
       group.forEach((n, i) => {
+        const isRoot = n.symbol.id === graph.root;
         flowNodes.push({
           id: String(n.symbol.id),
           type: "symbol",
@@ -57,9 +58,14 @@ export function GraphCanvas({ graph }: { graph: DependencyGraph }) {
           data: {
             name: n.symbol.name,
             kind: formatKind(n.symbol.kind),
-            isRoot: n.symbol.id === graph.root,
+            isRoot,
           },
           draggable: true,
+          // React Flow makes nodes focusable and keyboard-movable by
+          // default but doesn't know what a node *means* — without this
+          // a screen reader announces an unlabeled focusable group instead
+          // of the symbol it represents.
+          ariaLabel: `${formatKind(n.symbol.kind)} ${n.symbol.name}${isRoot ? ", root of this graph" : ""}`,
         });
       });
     }

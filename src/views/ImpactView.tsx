@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAppState } from "../state/AppStateContext";
 import { commands } from "../lib/ipc";
 import { useAsync } from "../hooks/useAsync";
@@ -8,6 +8,7 @@ import { RiskBadge } from "../components/RiskBadge";
 import { EvidenceList } from "../components/EvidenceList";
 import { EmptyState } from "../components/EmptyState";
 import { GraphCanvas } from "../components/graph/GraphCanvas";
+import { focusViewPanel } from "../components/layout/Sidebar";
 import { formatTestReason } from "../lib/format";
 import type { BlastRadius, SymbolProfile, BeforeYouChangeThisReport } from "../lib/ipc-types";
 import "./ImpactView.css";
@@ -20,9 +21,40 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "before-you-change", label: "Before You Change This" },
 ];
 
+const tabButtonId = (id: Tab) => `bh-impact-tab-${id}`;
+const TAB_PANEL_ID = "bh-impact-tabpanel";
+
 export function ImpactView() {
   const { selectedSymbol, setView } = useAppState();
   const [tab, setTab] = useState<Tab>("profile");
+  const tabRefs = useRef(new Map<Tab, HTMLButtonElement>());
+
+  // Roving tabindex per the WAI-ARIA APG tabs pattern — same treatment as
+  // Sidebar's view switcher, horizontal here since these tabs read left to
+  // right instead of top to bottom.
+  function handleTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number | null = null;
+    switch (event.key) {
+      case "ArrowRight":
+        nextIndex = (index + 1) % TABS.length;
+        break;
+      case "ArrowLeft":
+        nextIndex = (index - 1 + TABS.length) % TABS.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = TABS.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    const nextTab = TABS[nextIndex].id;
+    setTab(nextTab);
+    tabRefs.current.get(nextTab)?.focus();
+  }
 
   const profileFactory = useMemo(
     () => (selectedSymbol ? () => commands.getSymbolProfile(selectedSymbol.id) : null),
@@ -49,7 +81,13 @@ export function ImpactView() {
           title="No symbol selected"
           description="Select a symbol to see its profile, blast radius, and change-safety report."
           action={
-            <button type="button" onClick={() => setView("symbols")}>
+            <button
+              type="button"
+              onClick={() => {
+                setView("symbols");
+                focusViewPanel();
+              }}
+            >
               Go to Symbols
             </button>
           }
@@ -68,21 +106,35 @@ export function ImpactView() {
       </div>
 
       <div className="bh-impact-view__tabs" role="tablist" aria-label="Impact analysis">
-        {TABS.map((t) => (
+        {TABS.map((t, index) => (
           <button
             key={t.id}
+            ref={(el) => {
+              if (el) tabRefs.current.set(t.id, el);
+              else tabRefs.current.delete(t.id);
+            }}
             type="button"
+            id={tabButtonId(t.id)}
             role="tab"
             aria-selected={tab === t.id}
+            aria-controls={TAB_PANEL_ID}
+            tabIndex={tab === t.id ? 0 : -1}
             className={tab === t.id ? "bh-impact-view__tab--active" : ""}
             onClick={() => setTab(t.id)}
+            onKeyDown={(e) => handleTabKeyDown(e, index)}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      <div className="bh-impact-view__panel" role="tabpanel">
+      <div
+        id={TAB_PANEL_ID}
+        className="bh-impact-view__panel"
+        role="tabpanel"
+        aria-labelledby={tabButtonId(tab)}
+        tabIndex={0}
+      >
         {tab === "profile" && (
           <AsyncSection state={profile} onRetry={profile.retry}>
             {(data) => <ProfileTab profile={data} />}

@@ -6,6 +6,7 @@ import { AsyncSection } from "../components/AsyncSection";
 import { EmptyState } from "../components/EmptyState";
 import { Panel } from "../components/Panel";
 import { GraphCanvas } from "../components/graph/GraphCanvas";
+import { focusViewPanel } from "../components/layout/Sidebar";
 import "./GraphView.css";
 
 export function GraphView() {
@@ -27,7 +28,13 @@ export function GraphView() {
           title="No symbol selected"
           description="Select a symbol first to see who calls it or what it calls."
           action={
-            <button type="button" onClick={() => setView("symbols")}>
+            <button
+              type="button"
+              onClick={() => {
+                setView("symbols");
+                focusViewPanel();
+              }}
+            >
               Go to Symbols
             </button>
           }

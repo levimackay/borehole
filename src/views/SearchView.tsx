@@ -4,6 +4,7 @@ import { useSymbolSearch } from "../hooks/useSymbolSearch";
 import { AsyncSection } from "../components/AsyncSection";
 import { SymbolResultsList } from "../components/SymbolResultsList";
 import { Panel } from "../components/Panel";
+import { focusViewPanel } from "../components/layout/Sidebar";
 import type { Symbol } from "../lib/ipc-types";
 import "./SearchView.css";
 
@@ -20,6 +21,11 @@ export function SearchView() {
   function jumpToImpact(symbol: Symbol) {
     selectSymbol(symbol);
     setView("impact");
+    // Picking a result swaps the entire main view out from under the
+    // (now-unmounted) result button — without an explicit focus move,
+    // focus would silently fall back to <body> and a keyboard/screen
+    // reader user would get no indication anything happened.
+    focusViewPanel();
   }
 
   return (

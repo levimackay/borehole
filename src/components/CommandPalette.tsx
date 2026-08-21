@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Command } from "cmdk";
 import { useAppState, type ViewId } from "../state/AppStateContext";
+import { focusViewPanel } from "./layout/Sidebar";
 import "./CommandPalette.css";
 
 interface NotAvailableNotice {
@@ -32,6 +33,7 @@ export function CommandPalette() {
   function goTo(view: ViewId) {
     setView(view);
     setOpen(false);
+    focusViewPanel();
   }
 
   function goToOrPickSymbolFirst(view: ViewId) {
@@ -40,6 +42,7 @@ export function CommandPalette() {
     // nothing to show.
     setView(selectedSymbol ? view : "symbols");
     setOpen(false);
+    focusViewPanel();
   }
 
   function showNotAvailable(title: string) {

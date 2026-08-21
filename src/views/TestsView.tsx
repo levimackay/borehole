@@ -6,6 +6,7 @@ import { AsyncSection } from "../components/AsyncSection";
 import { ConfidenceBadge } from "../components/ConfidenceBadge";
 import { EmptyState } from "../components/EmptyState";
 import { Panel } from "../components/Panel";
+import { focusViewPanel } from "../components/layout/Sidebar";
 import { formatTestReason } from "../lib/format";
 import "./TestsView.css";
 
@@ -26,7 +27,13 @@ export function TestsView() {
           title="No symbol selected"
           description="Select a symbol to find the tests believed to cover it."
           action={
-            <button type="button" onClick={() => setView("symbols")}>
+            <button
+              type="button"
+              onClick={() => {
+                setView("symbols");
+                focusViewPanel();
+              }}
+            >
               Go to Symbols
             </button>
           }
