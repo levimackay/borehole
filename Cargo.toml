@@ -1,0 +1,52 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/engine-core",
+    "crates/engine-parse",
+    "crates/engine-index",
+    "crates/engine-graph",
+    "crates/engine-git",
+    "crates/engine-evidence",
+    "crates/cli",
+    "src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/levimackay/borehole"
+authors = ["Levi Mackay"]
+rust-version = "1.82"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "2.0"
+rayon = "1.10"
+ignore = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tree-sitter = "0.25"
+tree-sitter-rust = "0.24"
+tree-sitter-typescript = "0.23"
+tree-sitter-javascript = "0.25"
+tree-sitter-python = "0.25"
+tree-sitter-go = "0.25"
+git2 = "0.19"
+rusqlite = { version = "0.32", features = ["bundled"] }
+clap = { version = "4.5", features = ["derive"] }
+tempfile = "3.13"
+toml = "0.8"
+engine-core = { path = "crates/engine-core" }
+engine-parse = { path = "crates/engine-parse" }
+engine-index = { path = "crates/engine-index" }
+engine-graph = { path = "crates/engine-graph" }
+engine-git = { path = "crates/engine-git" }
+engine-evidence = { path = "crates/engine-evidence" }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
