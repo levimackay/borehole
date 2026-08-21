@@ -400,7 +400,19 @@ impl GitAnalyzer {
             // Author time (not committer time) to stay consistent with
             // author_name/author_email above.
             timestamp: author.when().seconds(),
-            summary: commit.summary().unwrap_or_default().to_string(),
+            // git2 0.21 changed `summary()` from `Option<&str>` to
+            // `Result<Option<&str>, Error>` (surfacing invalid-UTF-8 as an
+            // error rather than lossily converting). `.ok()` treats that
+            // error the same way the rest of this function already treats
+            // a missing summary — falls through to the empty-string
+            // default rather than failing the whole commit lookup over one
+            // unreadable message.
+            summary: commit
+                .summary()
+                .ok()
+                .flatten()
+                .unwrap_or_default()
+                .to_string(),
             files_changed,
         }
     }
