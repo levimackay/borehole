@@ -1,5 +1,8 @@
 name = "borehole-website"
 compatibility_date = "2026-08-01"
+# Not a secret — an account id is an identifier, not a credential. Only
+# CLOUDFLARE_API_TOKEN (a GitHub Actions secret) grants any access.
+account_id = "208b3958e5e5dca9aa501c2881910aa8"
 
 [assets]
 directory = "./dist"
