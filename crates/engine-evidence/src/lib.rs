@@ -22,6 +22,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
+/// Default ceiling applied to `symbol_profile`'s git-history walk when the
+/// user hasn't set an explicit `BoreholeConfig::git_history_limit`. See its
+/// use site for the full reasoning — this exists so the *default*
+/// (unbounded) configuration still can't be turned into unbounded work by
+/// a repository that engineers one file touched by an enormous number of
+/// commits.
+const SYMBOL_HISTORY_SAFETY_LIMIT: u32 = 2000;
+
 #[derive(Debug, thiserror::Error)]
 pub enum EvidenceError {
     #[error(transparent)]
@@ -172,15 +180,34 @@ impl<'a> EvidenceEngine<'a> {
         let tests = self.related_tests(id)?;
         let config = self.config_touches(id)?;
 
-        // Explicitly unbounded (`None`) per this method's contract — a
-        // symbol's full modification count/introduction commit shouldn't
-        // be silently truncated by `BoreholeConfig::git_history_limit`,
-        // which exists to bound *repository-wide* history mining, not this
-        // single-file lookup.
+        // `BoreholeConfig::git_history_limit` exists to bound *repository-wide*
+        // history mining and defaults to `None` (unbounded) — using it alone
+        // here would leave the default configuration exposed to a repo that
+        // crafts one file touched by an enormous number of commits (e.g. a
+        // lockfile or CHANGELOG bumped every commit), which is unbounded work
+        // triggered by simply viewing that file's profile. `.or(...)` layers
+        // an independent safety ceiling under the user's config: an explicit
+        // limit the user set is always respected as-is (even one larger than
+        // the ceiling), but the *default* unbounded case still gets bounded.
+        let limit = self
+            .config
+            .git_history_limit
+            .or(Some(SYMBOL_HISTORY_SAFETY_LIMIT));
         let (introduced, modification_count) = match self.git {
             Some(git) => {
-                let history = git.file_history(&symbol.file, None)?;
-                let introduced = history.last().cloned();
+                let history = git.file_history(&symbol.file, limit)?;
+                // If the walk came back exactly at the cap, `history.last()`
+                // might not be the file's *true* first commit — reporting it
+                // as `introduced` would be a specific factual claim we can't
+                // actually back. Leaving it `None` in that edge case is the
+                // honest choice; `modification_count` still reports the
+                // (possibly-partial) count, which is true as a lower bound.
+                let hit_cap = limit.is_some_and(|l| history.len() as u32 == l);
+                let introduced = if hit_cap {
+                    None
+                } else {
+                    history.last().cloned()
+                };
                 let modification_count = history.len() as u32;
                 (introduced, modification_count)
             }

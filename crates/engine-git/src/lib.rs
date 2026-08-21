@@ -236,8 +236,22 @@ impl GitAnalyzer {
     /// back to the commit that first created the file at its current
     /// name's origin). `Ok(None)` when the file has no history — including
     /// when the repository has no commits at all.
-    pub fn introduced_commit(&self, path: &RepoPath) -> Result<Option<CommitInfo>> {
-        let entries = self.walk_tracked_file(path, None)?;
+    ///
+    /// `limit` bounds the walk exactly like `file_history`'s — pass `None`
+    /// only when the caller has already reasoned about the walk being
+    /// bounded some other way (e.g. a genuinely small file), since an
+    /// unbounded walk here costs one full first-parent history traversal
+    /// with rename detection. This parameter was added (this method has no
+    /// callers yet, so widening it here is a zero-risk contract update
+    /// rather than a breaking change) after a security review found the
+    /// original no-limit-parameter signature had no way to be called
+    /// safely from a caller with an untrusted/unbounded repository.
+    pub fn introduced_commit(
+        &self,
+        path: &RepoPath,
+        limit: Option<u32>,
+    ) -> Result<Option<CommitInfo>> {
+        let entries = self.walk_tracked_file(path, limit)?;
         Ok(entries.into_iter().next_back().map(|e| e.info))
     }
 
@@ -620,7 +634,7 @@ mod tests {
         );
 
         let introduced = analyzer
-            .introduced_commit(&RepoPath::new("c.txt"))
+            .introduced_commit(&RepoPath::new("c.txt"), None)
             .unwrap()
             .unwrap();
         assert_eq!(introduced.sha, c1);
@@ -667,7 +681,7 @@ mod tests {
         );
 
         let introduced = analyzer
-            .introduced_commit(&RepoPath::new("a.txt"))
+            .introduced_commit(&RepoPath::new("a.txt"), None)
             .unwrap()
             .unwrap();
         assert_eq!(introduced.sha, c5);
@@ -709,7 +723,7 @@ mod tests {
         assert!(history.is_empty());
 
         let introduced = analyzer
-            .introduced_commit(&RepoPath::new("never-existed.txt"))
+            .introduced_commit(&RepoPath::new("never-existed.txt"), None)
             .unwrap();
         assert!(introduced.is_none());
 
@@ -729,7 +743,9 @@ mod tests {
             .unwrap();
         assert!(history.is_empty());
 
-        let introduced = analyzer.introduced_commit(&RepoPath::new("a.txt")).unwrap();
+        let introduced = analyzer
+            .introduced_commit(&RepoPath::new("a.txt"), None)
+            .unwrap();
         assert!(introduced.is_none());
 
         let coupling = analyzer
