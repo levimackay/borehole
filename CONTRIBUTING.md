@@ -49,6 +49,7 @@ violates that direction.
 ## Testing
 
 ```sh
+fixtures/build-fixtures.sh   # materialize the fixture repos (generated, not committed)
 cargo test --workspace       # Rust
 npm run build                # frontend typecheck + build
 ```
@@ -56,7 +57,8 @@ npm run build                # frontend typecheck + build
 New logic in `engine-*` crates should ship with unit tests. Changes to
 cross-file behavior (resolution, indexing, git history) should exercise
 the fixtures under `fixtures/` where a relevant one exists, or add a new
-one — see `fixtures/README.md` for what makes a good fixture.
+one — see `fixtures/README.md` for what makes a good fixture and why
+they're generated rather than committed as nested repos.
 
 ## Formatting and linting
 

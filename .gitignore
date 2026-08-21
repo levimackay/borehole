@@ -40,4 +40,11 @@ src-tauri/gen
 coverage/
 *.profraw
 
-# fixture-generated git dirs are checked in deliberately via build-fixtures.sh, not gitignored
+# Materialized fixture repositories are generated (each is its own real
+# git repo, which git can't nest as plain files without turning it into a
+# broken gitlink — see fixtures/README.md). Only the generator script and
+# fixtures/README.md are tracked; run `fixtures/build-fixtures.sh` to
+# materialize them before running tests that depend on them. CI does this
+# as a step before `cargo test`. Each fixture's own NOTES.md is written by
+# the generator script and lives inside its (gitignored) inner repo.
+fixtures/*/

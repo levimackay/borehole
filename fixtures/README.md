@@ -6,6 +6,13 @@ Git repository with real commits (not hand-crafted `.git` internals), built
 by `fixtures/build-fixtures.sh` so history is reproducible and readable in
 `git log`.
 
+**Run `fixtures/build-fixtures.sh` before running tests that depend on
+these.** The materialized fixture directories are gitignored, not
+committed — a git repository nested inside another becomes a broken
+"embedded repository" gitlink rather than tracked files, so the generator
+script is the source of truth and CI runs it as a step before `cargo
+test`.
+
 A good fixture:
 
 - Tests one specific behavior, named in its directory (e.g.

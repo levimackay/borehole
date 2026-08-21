@@ -55,6 +55,14 @@ jobs:
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      # Integration tests in engine-index/engine-git/engine-evidence read
+      # real git repos under fixtures/*/ — these are generated, not
+      # committed (see fixtures/README.md), so they must be materialized
+      # before `cargo test`. bash is available on all three runner OSes.
+      - name: Build fixture repositories
+        shell: bash
+        run: fixtures/build-fixtures.sh
+
       - name: cargo test
         run: cargo test --workspace
 
