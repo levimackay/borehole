@@ -47,8 +47,8 @@ pub struct TestRef {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TestMatchReason {
-    NamingConvention, // e.g. session.ts -> session.test.ts
-    DirectImport,     // test file imports/references the symbol directly
+    NamingConvention,    // e.g. session.ts -> session.test.ts
+    DirectImport,        // test file imports/references the symbol directly
     DirectoryConvention, // lives under tests/, __tests__/, spec/
 }
 
@@ -125,13 +125,25 @@ pub struct CodeEvolution {
     pub confidence: Confidence,
 }
 
-/// Ties an `Index`, a `GitAnalyzer`, and a `RepoHandle` together into the
-/// synthesis operations the CLI/desktop layers call. Borrowed, not owned —
-/// callers control the lifetime of the underlying index/git handles (e.g.
-/// the Tauri app keeps one `EvidenceEngine` alive per open repo tab).
+/// Ties an `Index`, an optional `GitAnalyzer`, and a `RepoHandle` together
+/// into the synthesis operations the CLI/desktop layers call. Borrowed, not
+/// owned — callers control the lifetime of the underlying index/git
+/// handles (e.g. the Tauri app keeps one `EvidenceEngine` alive per open
+/// repo tab).
+///
+/// `git` is `None` when the opened directory has no `.git` (a plain folder,
+/// or a git repository so fresh it has no commits yet). This is a
+/// deliberate, honest degraded mode, not an error: every git-derived field
+/// this crate produces (`introduced`, `code_evolution`, historical
+/// warnings, temporal-coupling-based risk reasons) is simply omitted or
+/// returned empty with `Confidence::Low` when `git` is `None`, per the
+/// "Insufficient evidence is a correct answer" rule — see brief section 20
+/// and this crate's top-level doc comment. Callers must never synthesize a
+/// git-shaped answer (a fake "introduced" commit, an empty-but-labeled-High
+/// history) when git access wasn't available.
 pub struct EvidenceEngine<'a> {
     pub index: &'a engine_index::Index,
-    pub git: &'a engine_git::GitAnalyzer,
+    pub git: Option<&'a engine_git::GitAnalyzer>,
     pub repo: &'a engine_core::RepoHandle,
     pub config: &'a engine_core::BoreholeConfig,
 }
@@ -139,11 +151,16 @@ pub struct EvidenceEngine<'a> {
 impl<'a> EvidenceEngine<'a> {
     pub fn new(
         index: &'a engine_index::Index,
-        git: &'a engine_git::GitAnalyzer,
+        git: Option<&'a engine_git::GitAnalyzer>,
         repo: &'a engine_core::RepoHandle,
         config: &'a engine_core::BoreholeConfig,
     ) -> Self {
-        Self { index, git, repo, config }
+        Self {
+            index,
+            git,
+            repo,
+            config,
+        }
     }
 
     pub fn symbol_profile(&self, id: SymbolId) -> Result<SymbolProfile> {

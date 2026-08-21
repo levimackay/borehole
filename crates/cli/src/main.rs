@@ -7,7 +7,11 @@ use std::path::PathBuf;
 mod commands;
 
 #[derive(Parser)]
-#[command(name = "borehole", version, about = "Understand unfamiliar code before you change it.")]
+#[command(
+    name = "borehole",
+    version,
+    about = "Understand unfamiliar code before you change it."
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -20,9 +24,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     /// Index a repository (or refresh an existing index).
-    Analyze {
-        path: PathBuf,
-    },
+    Analyze { path: PathBuf },
     /// Search for a symbol by name.
     Symbol {
         name: String,

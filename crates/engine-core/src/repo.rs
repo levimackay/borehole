@@ -158,7 +158,10 @@ mod tests {
 
         let rs = files.iter().find(|f| f.path.as_str() == "main.rs").unwrap();
         assert_eq!(rs.language, Some(Language::Rust));
-        let md = files.iter().find(|f| f.path.as_str() == "README.md").unwrap();
+        let md = files
+            .iter()
+            .find(|f| f.path.as_str() == "README.md")
+            .unwrap();
         assert_eq!(md.language, None);
     }
 }

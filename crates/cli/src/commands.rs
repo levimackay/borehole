@@ -9,7 +9,8 @@ fn index_db_path(repo: &RepoHandle) -> PathBuf {
 }
 
 fn open_repo(path: &Path) -> anyhow::Result<RepoHandle> {
-    RepoHandle::open(path).map_err(|e| anyhow::anyhow!("{e}\n\nIs {} a real directory?", path.display()))
+    RepoHandle::open(path)
+        .map_err(|e| anyhow::anyhow!("{e}\n\nIs {} a real directory?", path.display()))
 }
 
 pub fn run(command: Command, json: bool) -> anyhow::Result<()> {
@@ -47,15 +48,27 @@ pub fn run(command: Command, json: bool) -> anyhow::Result<()> {
             let results = index.search_symbols(&name, 25)?;
             emit(&results, json, |r| {
                 for s in r {
-                    println!("{}  {}  {}:{}", s.kind, s.qualified_name, s.file, s.span.start_line);
+                    println!(
+                        "{}  {}  {}:{}",
+                        s.kind, s.qualified_name, s.file, s.span.start_line
+                    );
                 }
             })
         }
-        Command::Callers { symbol, repo } => run_graph_query(&repo, &symbol, json, GraphQuery::Callers),
-        Command::Callees { symbol, repo } => run_graph_query(&repo, &symbol, json, GraphQuery::Callees),
-        Command::Impact { target, repo, before } => {
+        Command::Callers { symbol, repo } => {
+            run_graph_query(&repo, &symbol, json, GraphQuery::Callers)
+        }
+        Command::Callees { symbol, repo } => {
+            run_graph_query(&repo, &symbol, json, GraphQuery::Callees)
+        }
+        Command::Impact {
+            target,
+            repo,
+            before,
+        } => {
             let (repo, index, git, config) = open_engine(&repo)?;
-            let evidence = engine_evidence::EvidenceEngine::new(&index, &git, &repo, &config);
+            let evidence =
+                engine_evidence::EvidenceEngine::new(&index, git.as_ref(), &repo, &config);
             let id = resolve_target_to_symbol(&index, &target)?;
             if before {
                 let report = evidence.before_you_change_this(id)?;
@@ -67,19 +80,25 @@ pub fn run(command: Command, json: bool) -> anyhow::Result<()> {
         }
         Command::History { target, repo } => {
             let (repo, index, git, config) = open_engine(&repo)?;
-            let evidence = engine_evidence::EvidenceEngine::new(&index, &git, &repo, &config);
+            let evidence =
+                engine_evidence::EvidenceEngine::new(&index, git.as_ref(), &repo, &config);
             let path = engine_core::RepoPath::new(target);
             let evolution = evidence.code_evolution(&path)?;
             emit(&evolution, json, |e| {
                 println!("Commits: {}", e.all_commits.len());
                 for c in &e.major_refactors {
-                    println!("  [refactor] {} {}", &c.sha[..7.min(c.sha.len())], c.summary);
+                    println!(
+                        "  [refactor] {} {}",
+                        &c.sha[..7.min(c.sha.len())],
+                        c.summary
+                    );
                 }
             })
         }
         Command::Tests { symbol, repo } => {
             let (repo, index, git, config) = open_engine(&repo)?;
-            let evidence = engine_evidence::EvidenceEngine::new(&index, &git, &repo, &config);
+            let evidence =
+                engine_evidence::EvidenceEngine::new(&index, git.as_ref(), &repo, &config);
             let id = resolve_target_to_symbol(&index, &symbol)?;
             let tests = evidence.related_tests(id)?;
             emit(&tests, json, |ts| {
@@ -90,12 +109,16 @@ pub fn run(command: Command, json: bool) -> anyhow::Result<()> {
         }
         Command::Explain { target, repo } => {
             let (repo, index, git, config) = open_engine(&repo)?;
-            let evidence = engine_evidence::EvidenceEngine::new(&index, &git, &repo, &config);
+            let evidence =
+                engine_evidence::EvidenceEngine::new(&index, git.as_ref(), &repo, &config);
             let id = resolve_target_to_symbol(&index, &target)?;
             let profile = evidence.symbol_profile(id)?;
             emit(&profile, json, |p| {
                 println!("{} ({})", p.symbol.qualified_name, p.symbol.kind);
-                println!("  {} direct callers, {} indirect", p.direct_callers, p.indirect_callers);
+                println!(
+                    "  {} direct callers, {} indirect",
+                    p.direct_callers, p.indirect_callers
+                );
                 println!("  {} related test files", p.tests.len());
             })
         }
@@ -118,7 +141,12 @@ fn run_graph_query(repo: &Path, symbol: &str, json: bool, which: GraphQuery) -> 
     };
     emit(&graph, json, |g| {
         for node in &g.nodes {
-            println!("{}  {}  ({})", "  ".repeat(node.depth as usize), node.symbol.qualified_name, node.symbol.file);
+            println!(
+                "{}  {}  ({})",
+                "  ".repeat(node.depth as usize),
+                node.symbol.qualified_name,
+                node.symbol.file
+            );
         }
         if g.truncated {
             println!("(truncated at max depth — re-run with a higher limit to see more)");
@@ -128,12 +156,17 @@ fn run_graph_query(repo: &Path, symbol: &str, json: bool, which: GraphQuery) -> 
 
 fn open_engine(
     path: &Path,
-) -> anyhow::Result<(RepoHandle, Index, GitAnalyzer, BoreholeConfig)> {
+) -> anyhow::Result<(RepoHandle, Index, Option<GitAnalyzer>, BoreholeConfig)> {
     let repo = open_repo(path)?;
     let config = BoreholeConfig::load(repo.root())?;
     let index = Index::open(&index_db_path(&repo))?;
-    let git = GitAnalyzer::open(repo.root())
-        .map_err(|e| anyhow::anyhow!("{e}\n\nGit history features need a real .git directory."))?;
+    // No `.git` (or `git2` couldn't open it, e.g. no commits yet) degrades
+    // history-dependent evidence rather than blocking every command — see
+    // `engine_evidence::EvidenceEngine`'s doc comment on `git: Option<..>`.
+    let git = GitAnalyzer::open(repo.root()).ok();
+    if git.is_none() && !repo.has_git() {
+        eprintln!("Note: no .git directory found — history-based evidence will be unavailable.");
+    }
     Ok((repo, index, git, config))
 }
 
@@ -144,11 +177,9 @@ fn open_engine(
 /// candidates, not silently guessed here.
 fn resolve_target_to_symbol(index: &Index, target: &str) -> anyhow::Result<engine_core::SymbolId> {
     let matches = index.search_symbols(target, 1)?;
-    matches
-        .into_iter()
-        .next()
-        .map(|s| s.id)
-        .ok_or_else(|| anyhow::anyhow!("no symbol matching '{target}' — try `borehole symbol {target}` to search"))
+    matches.into_iter().next().map(|s| s.id).ok_or_else(|| {
+        anyhow::anyhow!("no symbol matching '{target}' — try `borehole symbol {target}` to search")
+    })
 }
 
 fn emit<T: serde::Serialize>(value: &T, json: bool, print: impl FnOnce(&T)) -> anyhow::Result<()> {
@@ -166,7 +197,10 @@ fn print_blast_radius(r: &engine_evidence::BlastRadius) {
     println!("Direct callers:   {}", r.direct_callers);
     println!("Indirect callers: {}", r.indirect_callers);
     println!("Test suites:      {}", r.test_suites);
-    println!("Public API:       {}", if r.is_public_api { "yes" } else { "no" });
+    println!(
+        "Public API:       {}",
+        if r.is_public_api { "yes" } else { "no" }
+    );
     println!("Config files:     {}", r.config_files.len());
     println!();
     println!("Risk: {}", r.risk.to_string().to_uppercase());
