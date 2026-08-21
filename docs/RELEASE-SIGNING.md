@@ -36,16 +36,16 @@ Requires a paid Apple Developer account ($99/year).
 | `APPLE_CERTIFICATE_PASSWORD` | Password used when exporting that `.p12`. |
 | `APPLE_SIGNING_IDENTITY` | The certificate's keychain identity string (e.g. `Developer ID Application: Name (TEAMID)`). |
 | `APPLE_ID` | Apple ID email used for notarization. |
-| `APPLE_PASSWORD` | An [app-specific password](https://support.apple.com/en-ca/HT204397) for that Apple ID — never the account password. |
+| `APPLE_PASSWORD` | An [app-specific password](https://support.apple.com/en-ca/HT204397) for that Apple ID, never the account password. |
 | `APPLE_TEAM_ID` | Apple Developer Team ID. |
-| `KEYCHAIN_PASSWORD` | Arbitrary password the workflow uses for the temporary CI keychain it creates — any strong random string, not tied to an Apple account. |
+| `KEYCHAIN_PASSWORD` | Arbitrary password the workflow uses for the temporary CI keychain it creates: any strong random string, not tied to an Apple account. |
 
 See <https://v2.tauri.app/distribute/sign/macos/> for how to create and
 export the certificate.
 
 ## Windows code signing
 
-Not currently wired into the workflow — no certificate exists and Windows
+Not currently wired into the workflow: no certificate exists and Windows
 builds ship unsigned (triggers a SmartScreen warning on first run). Add this
 as a follow-up once a certificate (EV or standard code-signing cert) is
 available; see <https://v2.tauri.app/distribute/sign/windows/>.

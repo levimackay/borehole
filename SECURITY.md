@@ -3,7 +3,7 @@
 ## Threat model
 
 Borehole opens and analyzes source code repositories that may come from
-untrusted or unfamiliar sources — that's the whole point of the tool. It is
+untrusted or unfamiliar sources: that's the whole point of the tool. It is
 designed under the assumption that **a repository you open in Borehole may
 be actively malicious**, not just messy.
 
@@ -14,15 +14,15 @@ Specifically, Borehole:
   hooks, no binaries, no shell commands constructed from repository
   content.
 - **Reads Git data exclusively through `libgit2`** (via the `git2` crate),
-  never by shelling out to a `git` binary — so a crafted branch name,
+  never by shelling out to a `git` binary, so a crafted branch name,
   commit message, tag, or `.gitconfig` cannot inject a shell command.
 - **Validates every path** that crosses a trust boundary (index storage,
   Tauri IPC) against the opened repository's root, rejecting anything that
-  resolves outside it — the defense against path traversal via `..`
+  resolves outside it: the defense against path traversal via `..`
   segments or malicious symlinks.
 - **Never uploads repository content anywhere** unless you explicitly
-  enable the optional AI explanation feature and configure a provider —
-  see `PRIVACY.md` for exactly what that would send.
+  enable the optional AI explanation feature and configure a provider.
+  See `PRIVACY.md` for exactly what that would send.
 
 See `docs/ARCHITECTURE.md` → "Security posture" for the implementation
 details, and `PRIVACY.md` for the data-handling model.

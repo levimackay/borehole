@@ -3,7 +3,7 @@
 Borehole is built on the open-source projects below. This list covers
 direct dependencies as of the current release; transitive dependencies are
 pulled in automatically by Cargo and npm and are not individually listed
-here — run `cargo metadata` / `npm ls` for the full transitive tree, or
+here. Run `cargo metadata` / `npm ls` for the full transitive tree, or
 `cargo install cargo-license && cargo license` for a complete generated
 report before cutting a release.
 
@@ -47,7 +47,7 @@ metadata at the time this file was written (2026-08-20), not assumed.
 
 ## Bundled data
 
-- **SQLite** — the `rusqlite` crate's `bundled` feature compiles SQLite
+- **SQLite**: the `rusqlite` crate's `bundled` feature compiles SQLite
   directly into the binary. SQLite is dedicated to the public domain.
 
 Every dependency above is permissively licensed (MIT, Apache-2.0, Unlicense,

@@ -7,7 +7,7 @@ and does not do with your data.
 
 - There is no sign-up, no account, and no login.
 - There is no Borehole backend server. The desktop app and CLI talk to
-  your filesystem and your local Git repository — nothing else, by
+  your filesystem and your local Git repository, nothing else, by
   default.
 - Borehole sends no telemetry, analytics, or crash reports anywhere. There
   is no tracking of what repositories you open, what you search for, or
@@ -26,7 +26,7 @@ and does not do with your data.
 
 ## What Borehole writes
 
-- An index database at `<repository>/.borehole/index.db` (SQLite) —
+- An index database at `<repository>/.borehole/index.db` (SQLite):
   derived data (parsed symbols, resolved references, cached graph edges)
   rebuildable at any time from the repository itself. This directory is
   gitignored by default in Borehole-managed projects; it never needs to be
@@ -43,21 +43,21 @@ features that would ever make one are both off unless you turn them on:
    API key, or a local endpoint like Ollama) in Settings, selecting
    "Explain with AI" sends the evidence Borehole has already gathered
    about the selected symbol (its name, signature, caller/callee counts,
-   related commit summaries — never raw secrets, never your full source
+   related commit summaries, never raw secrets, never your full source
    tree) to that provider to generate a natural-language explanation. The
    exact payload is visible in Settings before you enable the feature. AI
    output is always visually labeled "AI-generated" and never presented as
    repository evidence.
 2. **Optional update check.** Not yet implemented; when it ships, it will
    be an explicit, off-by-default setting that checks GitHub Releases for
-   a newer version — no usage data is attached to that request.
+   a newer version. No usage data is attached to that request.
 
 ## Secrets
 
 Borehole may detect that code *references* a configuration value or
 environment variable (e.g. "uses environment variable `DATABASE_URL`").
 It only ever displays the **name** of such a reference, never its resolved
-value — Borehole does not read your `.env` files' contents into any report,
+value. Borehole does not read your `.env` files' contents into any report,
 export, or AI payload.
 
 ## Questions

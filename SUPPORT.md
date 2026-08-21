@@ -11,8 +11,8 @@ this stage.
 
 Open a [GitHub issue](https://github.com/levimackay/borehole/issues/new/choose)
 using the Bug Report template. Include your OS, Borehole version
-(`borehole --version`), and — since Borehole's whole job is analyzing
-repositories — ideally a minimal repository or snippet that reproduces the
+(`borehole --version`), and, since Borehole's whole job is analyzing
+repositories, ideally a minimal repository or snippet that reproduces the
 issue, since behavior can be very language- or repo-structure-specific.
 
 ## Feature requests
