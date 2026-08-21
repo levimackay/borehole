@@ -3,7 +3,43 @@
 //! kinds live in each language's own module.
 
 use engine_core::Span;
-use tree_sitter::Node;
+use std::time::{Duration, Instant};
+use tree_sitter::{Node, ParseOptions, Parser, Tree};
+
+/// Hard ceiling on how long a single file's tree-sitter parse is allowed to
+/// run. Adversarially deep nesting (`mod a { mod a { ... } }` tens of
+/// thousands of levels deep, well within the 2MB file-size cap) can make
+/// tree-sitter's own `parse()` call take tens of seconds *before extraction
+/// ever sees the resulting tree* — this isn't something extraction-side
+/// bounds (like `qualify`'s length cap) can fix, since the cost is entirely
+/// inside the grammar's parse. [`parse_with_timeout`] makes the parse
+/// return `None` once this elapses, which every extractor already surfaces
+/// as `ParseError::TreeSitterFailure` — a clean, honest per-file failure
+/// instead of a multi-second stall on one malicious file blocking the
+/// whole (otherwise-parallel) indexing run.
+const PARSE_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Construct a plain `Parser`. Pairs with [`parse_with_timeout`], which is
+/// what actually enforces the bound — every extractor should parse through
+/// that rather than calling `parser.parse()` directly.
+pub(crate) fn new_parser() -> Parser {
+    Parser::new()
+}
+
+/// Parse `source`, aborting and returning `None` if it takes longer than
+/// [`PARSE_TIMEOUT`]. Uses `parse_with_options`' progress callback (checked
+/// periodically during the parse) rather than the deprecated
+/// `set_timeout_micros`, since that API is slated for removal.
+pub(crate) fn parse_with_timeout(parser: &mut Parser, source: &str) -> Option<Tree> {
+    let start = Instant::now();
+    let mut deadline_exceeded = |_state: &tree_sitter::ParseState| start.elapsed() > PARSE_TIMEOUT;
+    let options = ParseOptions::new().progress_callback(&mut deadline_exceeded);
+    parser.parse_with_options(
+        &mut |offset, _pos| source.as_bytes().get(offset..).unwrap_or(&[]),
+        None,
+        Some(options),
+    )
+}
 
 /// Convert a tree-sitter node's location into our `Span` type. Lines/columns
 /// are 1-indexed (tree-sitter's are 0-indexed) to match `Span`'s documented

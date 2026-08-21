@@ -24,7 +24,7 @@ use crate::{
     ImportEdge, LanguageExtractor, ParseError, ParseResult, ParsedReference, ParsedSymbol,
 };
 use engine_core::{Language, ReferenceKind, RepoPath, SymbolKind};
-use tree_sitter::{Node, Parser};
+use tree_sitter::Node;
 
 pub struct RustExtractor;
 
@@ -34,12 +34,11 @@ impl LanguageExtractor for RustExtractor {
     }
 
     fn extract(&self, source: &str, file: &RepoPath) -> Result<ParseResult, ParseError> {
-        let mut parser = Parser::new();
+        let mut parser = super::support::new_parser();
         parser
             .set_language(&tree_sitter_rust::LANGUAGE.into())
             .map_err(|_| ParseError::TreeSitterFailure { file: file.clone() })?;
-        let tree = parser
-            .parse(source, None)
+        let tree = super::support::parse_with_timeout(&mut parser, source)
             .ok_or_else(|| ParseError::TreeSitterFailure { file: file.clone() })?;
         let root = tree.root_node();
 
@@ -55,8 +54,22 @@ impl LanguageExtractor for RustExtractor {
     }
 }
 
+/// Cap on how long an accumulated qualified-name prefix is allowed to grow.
+/// Without this, adversarially deep nesting (`mod a { mod a { ... } }`
+/// thousands of levels deep — well within the 2MB file-size cap) makes
+/// `qualify` cost O(depth) per call across O(depth) calls, i.e. O(depth^2)
+/// total: ~25s at 20k levels, extrapolating to over an hour at the ~333k
+/// levels a maximally adversarial file could hold. Once the prefix hits
+/// this length, deeper symbols stop growing their qualifier further and
+/// share their nearest ancestor's (already-capped) qualified name — an
+/// honest, documented degradation for a pathological case, not a
+/// correctness claim about realistically-nested code (which never
+/// approaches this length).
+const MAX_QUALIFIER_LEN: usize = 400;
+
 fn qualify(qualifier: Option<&str>, name: &str) -> String {
     match qualifier {
+        Some(q) if q.len() >= MAX_QUALIFIER_LEN => q.to_string(),
         Some(q) if !q.is_empty() => format!("{q}::{name}"),
         _ => name.to_string(),
     }

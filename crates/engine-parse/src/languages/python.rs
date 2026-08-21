@@ -25,7 +25,7 @@ use crate::{
     ImportEdge, LanguageExtractor, ParseError, ParseResult, ParsedReference, ParsedSymbol,
 };
 use engine_core::{Language, ReferenceKind, RepoPath, SymbolKind};
-use tree_sitter::{Node, Parser};
+use tree_sitter::Node;
 
 pub struct PythonExtractor;
 
@@ -35,12 +35,11 @@ impl LanguageExtractor for PythonExtractor {
     }
 
     fn extract(&self, source: &str, file: &RepoPath) -> Result<ParseResult, ParseError> {
-        let mut parser = Parser::new();
+        let mut parser = super::support::new_parser();
         parser
             .set_language(&tree_sitter_python::LANGUAGE.into())
             .map_err(|_| ParseError::TreeSitterFailure { file: file.clone() })?;
-        let tree = parser
-            .parse(source, None)
+        let tree = super::support::parse_with_timeout(&mut parser, source)
             .ok_or_else(|| ParseError::TreeSitterFailure { file: file.clone() })?;
         let root = tree.root_node();
 
@@ -56,8 +55,13 @@ impl LanguageExtractor for PythonExtractor {
     }
 }
 
+/// See `rust.rs`'s `MAX_QUALIFIER_LEN` doc comment — same O(depth^2) DoS
+/// concern, same fix, same rationale.
+const MAX_QUALIFIER_LEN: usize = 400;
+
 fn qualify(qualifier: Option<&str>, name: &str) -> String {
     match qualifier {
+        Some(q) if q.len() >= MAX_QUALIFIER_LEN => q.to_string(),
         Some(q) if !q.is_empty() => format!("{q}.{name}"),
         _ => name.to_string(),
     }

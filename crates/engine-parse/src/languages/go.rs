@@ -25,7 +25,7 @@ use crate::{
     ImportEdge, LanguageExtractor, ParseError, ParseResult, ParsedReference, ParsedSymbol,
 };
 use engine_core::{Language, ReferenceKind, RepoPath, SymbolKind};
-use tree_sitter::{Node, Parser};
+use tree_sitter::Node;
 
 pub struct GoExtractor;
 
@@ -35,12 +35,11 @@ impl LanguageExtractor for GoExtractor {
     }
 
     fn extract(&self, source: &str, file: &RepoPath) -> Result<ParseResult, ParseError> {
-        let mut parser = Parser::new();
+        let mut parser = super::support::new_parser();
         parser
             .set_language(&tree_sitter_go::LANGUAGE.into())
             .map_err(|_| ParseError::TreeSitterFailure { file: file.clone() })?;
-        let tree = parser
-            .parse(source, None)
+        let tree = super::support::parse_with_timeout(&mut parser, source)
             .ok_or_else(|| ParseError::TreeSitterFailure { file: file.clone() })?;
         let root = tree.root_node();
 

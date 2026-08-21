@@ -34,7 +34,7 @@ use crate::languages::support::{
 };
 use crate::{ImportEdge, ParseError, ParseResult, ParsedReference, ParsedSymbol};
 use engine_core::{ReferenceKind, RepoPath, Span, SymbolKind};
-use tree_sitter::{Language as TsLanguage, Node, Parser};
+use tree_sitter::{Language as TsLanguage, Node};
 
 pub(crate) fn extract(
     source: &str,
@@ -42,12 +42,11 @@ pub(crate) fn extract(
     grammar: TsLanguage,
     is_typescript: bool,
 ) -> Result<ParseResult, ParseError> {
-    let mut parser = Parser::new();
+    let mut parser = super::support::new_parser();
     parser
         .set_language(&grammar)
         .map_err(|_| ParseError::TreeSitterFailure { file: file.clone() })?;
-    let tree = parser
-        .parse(source, None)
+    let tree = super::support::parse_with_timeout(&mut parser, source)
         .ok_or_else(|| ParseError::TreeSitterFailure { file: file.clone() })?;
     let root = tree.root_node();
 
@@ -62,8 +61,13 @@ pub(crate) fn extract(
     Ok(result)
 }
 
+/// See `rust.rs`'s `MAX_QUALIFIER_LEN` doc comment — same O(depth^2) DoS
+/// concern, same fix, same rationale.
+const MAX_QUALIFIER_LEN: usize = 400;
+
 fn qualify(qualifier: Option<&str>, name: &str) -> String {
     match qualifier {
+        Some(q) if q.len() >= MAX_QUALIFIER_LEN => q.to_string(),
         Some(q) if !q.is_empty() => format!("{q}.{name}"),
         _ => name.to_string(),
     }
