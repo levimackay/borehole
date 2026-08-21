@@ -1,8 +1,36 @@
 # Borehole website — design spec
 
+## Revision note (v2)
+
+The first build (v1) had a generic centered-hero-plus-two-buttons pattern
+(headline, one-line subhead, two side-by-side buttons) that is a named AI
+tell. Redesigned via the Hallmark skill's `redesign` flow: three genuinely
+different structural directions were rendered (Workbench, Long Document,
+Split Studio) and Split Studio was picked. Everything below reflects v2;
+the conceit and token/type rules from v1 carry forward unchanged.
+
 ## The conceit
 
 **A drill log, not a landing page.** The site reads like the output of the tool itself: evidence-first, monospace-inflected, dense where it has real content, silent where it doesn't. No hero illustration, no abstract gradient — the "art" is the product's own real terminal output and interface, presented like specimens pulled up from a core sample.
+
+## Macrostructure: Split Studio
+
+Diptych. Every major claim divides the screen: statement on one side, real
+`borehole` terminal output (or a real screenshot) on the other, pairing
+alternates direction down the page. This was picked over Workbench (safe
+but conventional dev-tool tour) and Long Document (the most memorable
+prose, but it buries the CTA, which is a real risk for a page that needs
+to show "how do I download" within seconds) because the *form* of the
+page argues the same thing the *product* does: nothing is asserted without
+its evidence sitting directly next to it.
+
+Diptych rows are not forced onto every section. Per the reference notes
+in `~/.claude/design-references/README.md` ("density alternates hard"),
+rows of paired claim+proof alternate with full-width dense sections (the
+CLI table, the privacy strip, the architecture diagram) — that alternation
+between two-column and full-bleed density *is* the page's rhythm, matching
+how the Shopify Editions references swing between a single full-bleed
+image/word and a dense two-column reference table.
 
 ## Visual identity (inherits the desktop app's tokens, doesn't invent a new one)
 
@@ -13,17 +41,18 @@
 
 ## Structure (single-page, per the brief)
 
-1. **Hero.** Headline: "Understand the code before you change it." One line of supporting text. Two CTAs: Download (primary, teal), View on GitHub (secondary, outline). Below the fold line: a real terminal transcript rendered as a code block (the `borehole impact top --before` session from the README), not a decorative screenshot.
-2. **The problem**, stated in 2-3 sentences — matches README's "The problem" section, don't reinvent new marketing copy.
-3. **Product demo**: the desktop app screenshot (command palette), full-bleed within a bordered frame matching the app's own panel styling — the frame IS the app, not a browser mockup around it.
-4. **Feature grid — but not a 3-card bento.** Alternate a wide full-bleed section (one feature, large type, generous space — e.g. "Before You Change This") with a dense two-column reference-table-style section (the rest: dependency graph, blast radius, git archaeology, evidence model, test discovery, context export) so the page doesn't read as uniform equal-weight cards.
-5. **Evidence model callout**: the ambiguous-refs terminal transcript from the README (`borehole symbol Handler` showing two unresolved same-named classes) as a standalone, large-type section — this is the single most differentiating proof point the product has, give it room.
-6. **CLI section**: the command table from the README, rendered as an actual monospace table, not prose.
-7. **Privacy/Security strip**: three short, factual statements (no account · no cloud · git access via git2, never a shell) — dense, not padded with icons.
-8. **Architecture**: the mermaid diagram from the README, or a simplified static SVG version of the same pipeline.
-9. **Supported languages**: plain list, not badges/pills.
-10. **Download**: platform links pointing at GitHub Releases — see Content/asset inventory below for what's real vs. not-yet-real.
-11. **Footer**: GitHub, docs, license, "AI-assisted development disclosed" line (same wording as README, since this is the same disclosure, not new copy).
+1. **Hero — diptych.** Left: kicker ("local-first codebase intelligence"), headline "Understand the code before you change it.", one line of supporting text, Download (primary, teal) + View on GitHub (secondary, outline). Right: the real `borehole impact top --before` terminal transcript from the README. Nav is content-sized, not a floating pill (matches the app's own `bh` mark + wordmark).
+2. **Evidence model — diptych, reversed** (proof left, claim right this time, so consecutive rows don't all point the same way). The `borehole symbol Handler` ambiguous-refs transcript paired with the "two unrelated classes, one name" argument — the single most differentiating proof point, given a full row to itself.
+3. **The problem** — short prose, full-width, not paired with proof (it's scene-setting, not a claim). Matches README's "The problem" verbatim.
+4. **Product demo** — full-bleed: the desktop app's command-palette screenshot inside a bordered frame matching the app's own panel styling. The frame IS the app, not a browser-chrome mockup.
+5. **Before you change this — diptych.** The reading-list feature gets its own paired row (claim + the real reading-list terminal output), since it's the product's core workflow.
+6. **Everything else — full-width dense reference table.** Dependency graph, blast radius, git archaeology, test discovery, context export: a two-column definition-list, not cards. The density break after two diptych rows and a full-bleed image is deliberate.
+7. **CLI section** — the command table from the README, full-width, an actual monospace table.
+8. **Privacy/Security strip** — three short, factual statements, full-width, dense, no icons.
+9. **Architecture** — the mermaid pipeline as a static inline SVG.
+10. **Supported languages** — plain list, not badges/pills.
+11. **Download** — platform links to GitHub Releases, honest about no tagged release existing yet.
+12. **Footer** — GitHub, docs, license, the AI-assisted-development disclosure line verbatim from the README.
 
 ## Content/asset inventory — what's real right now
 
@@ -33,7 +62,18 @@
 
 ## Motion
 
-One staggered reveal on the hero's headline/subhead/CTA on load. Nothing else animates except `prefers-reduced-motion`-respecting hover/focus state transitions on interactive elements (buttons, links). No scroll-triggered parallax, no floating elements.
+One staggered reveal on the hero's headline/subhead/CTA on load. Below the
+fold: each diptych row's two halves cross-fade in slightly staggered
+(claim then proof, ~80ms apart) as the row enters the viewport, once,
+never re-triggering on scroll-back — this is the Split Studio
+macrostructure's own reveal spec, and it reinforces the pairing rather
+than decorating the page. Full-width sections (problem, CLI table,
+privacy strip, architecture, languages) do not reveal — they're just
+there, per the Long Document principle of density needing no animation
+to justify itself. `transform`/`opacity` only, `--ease-out` easing,
+`prefers-reduced-motion: reduce` collapses every reveal to an instant
+state (no animation, not just a shorter one). No scroll-triggered
+parallax, no floating elements, no re-triggering on scroll-up/down.
 
 ## Stack
 
