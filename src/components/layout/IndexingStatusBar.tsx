@@ -42,7 +42,7 @@ export function IndexingStatusBar() {
   return (
     <div className="bh-index-bar bh-index-bar--complete">
       <span className="bh-index-bar__label">
-        Indexed {summary.files_indexed.toLocaleString()} files —{" "}
+        Indexed {summary.files_indexed.toLocaleString()} files.{" "}
         {summary.symbols_indexed.toLocaleString()} symbols,{" "}
         {summary.references_resolved.toLocaleString()}/
         {summary.references_indexed.toLocaleString()} references resolved (

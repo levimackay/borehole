@@ -1,7 +1,7 @@
 [package]
 name = "borehole-desktop"
 version.workspace = true
-description = "Borehole desktop application — understand unfamiliar code before you change it."
+description = "Borehole desktop application. Understand unfamiliar code before you change it."
 authors.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -2,7 +2,7 @@
   "name": "borehole",
   "private": true,
   "version": "0.1.0",
-  "description": "Understand unfamiliar code before you change it — local-first codebase intelligence.",
+  "description": "Understand unfamiliar code before you change it. Local-first codebase intelligence.",
   "author": "Levi Mackay",
   "license": "MIT",
   "repository": {

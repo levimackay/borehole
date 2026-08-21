@@ -73,7 +73,7 @@ export function GraphView() {
         </AsyncSection>
       </Panel>
       <p className="bh-graph-view__note">
-        Layout is a simple tiered arrangement by depth from the root — not a force-directed
+        Layout is a simple tiered arrangement by depth from the root, not a force-directed
         layout. Fine for shallow graphs, a known gap for wide ones.
       </p>
     </div>

@@ -1,6 +1,6 @@
 [package]
 name = "borehole"
-description = "Understand unfamiliar code before you change it — local-first codebase intelligence."
+description = "Understand unfamiliar code before you change it. Local-first codebase intelligence."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

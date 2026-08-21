@@ -9,7 +9,7 @@ const LABEL: Record<Confidence, string> = {
 const TITLE: Record<Confidence, string> = {
   high: "High confidence",
   medium: "Medium confidence",
-  low: "Low confidence — evidence is thin or indirect",
+  low: "Low confidence: evidence is thin or indirect",
 };
 
 export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {

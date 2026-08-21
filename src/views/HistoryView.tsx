@@ -77,7 +77,7 @@ export function HistoryView() {
                   <CommitLine commit={evolution.introduced} />
                 ) : (
                   <p className="bh-history-view__unknown">
-                    Unknown — no introducing commit found.
+                    Unknown: no introducing commit found.
                   </p>
                 )}
               </section>

@@ -149,7 +149,7 @@ fn run_graph_query(repo: &Path, symbol: &str, json: bool, which: GraphQuery) -> 
             );
         }
         if g.truncated {
-            println!("(truncated at max depth — re-run with a higher limit to see more)");
+            println!("(truncated at max depth: re-run with a higher limit to see more)");
         }
     })
 }
@@ -165,7 +165,7 @@ fn open_engine(
     // `engine_evidence::EvidenceEngine`'s doc comment on `git: Option<..>`.
     let git = GitAnalyzer::open(repo.root()).ok();
     if git.is_none() && !repo.has_git() {
-        eprintln!("Note: no .git directory found — history-based evidence will be unavailable.");
+        eprintln!("Note: no .git directory found. History-based evidence will be unavailable.");
     }
     Ok((repo, index, git, config))
 }
@@ -178,7 +178,7 @@ fn open_engine(
 fn resolve_target_to_symbol(index: &Index, target: &str) -> anyhow::Result<engine_core::SymbolId> {
     let matches = index.search_symbols(target, 1)?;
     matches.into_iter().next().map(|s| s.id).ok_or_else(|| {
-        anyhow::anyhow!("no symbol matching '{target}' — try `borehole symbol {target}` to search")
+        anyhow::anyhow!("no symbol matching '{target}'. Try `borehole symbol {target}` to search")
     })
 }
 
@@ -214,7 +214,7 @@ fn print_before_you_change_this(r: &engine_evidence::BeforeYouChangeThisReport) 
     println!();
     println!("Understand first:");
     for (i, item) in r.reading_list.iter().enumerate() {
-        println!("  {}. {} — {}", i + 1, item.symbol_or_file, item.why);
+        println!("  {}. {}: {}", i + 1, item.symbol_or_file, item.why);
     }
     println!();
     print_blast_radius(&r.blast_radius);

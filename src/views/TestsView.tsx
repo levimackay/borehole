@@ -49,7 +49,7 @@ export function TestsView() {
           {(refs) =>
             refs.length === 0 ? (
               <p className="bh-tests-view__empty">
-                No related tests found for this symbol — that's a real result, not a loading
+                No related tests found for this symbol. That's a real result, not a loading
                 state.
               </p>
             ) : (

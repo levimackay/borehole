@@ -11,7 +11,7 @@ function describeEvidence(ev: EvidenceRef): { label: string; detail: string } {
     case "commit":
       return {
         label: "commit",
-        detail: `${ev.sha.slice(0, 7)} — ${ev.summary}`,
+        detail: `${ev.sha.slice(0, 7)}: ${ev.summary}`,
       };
     case "test_file":
       return {

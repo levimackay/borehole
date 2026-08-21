@@ -48,7 +48,7 @@ export function CommandPalette() {
   function showNotAvailable(title: string) {
     setNotice({
       title,
-      reason: "This command isn't wired up yet — no view exists for it in this build.",
+      reason: "This command isn't wired up yet. No view exists for it in this build.",
     });
   }
 

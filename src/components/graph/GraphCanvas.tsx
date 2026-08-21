@@ -100,7 +100,7 @@ export function GraphCanvas({ graph }: { graph: DependencyGraph }) {
       </ReactFlow>
       {graph.truncated && (
         <p className="bh-graph-canvas__truncated">
-          Result truncated by the backend — this is a partial graph, not the full picture.
+          Result truncated by the backend. This is a partial graph, not the full picture.
         </p>
       )}
     </div>

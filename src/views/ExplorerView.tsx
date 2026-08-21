@@ -62,7 +62,7 @@ export function ExplorerView() {
           <p>
             Indexing in progress
             {indexStatus.progress
-              ? ` — ${indexStatus.progress.files_done.toLocaleString()} / ${indexStatus.progress.files_total.toLocaleString()} files`
+              ? `: ${indexStatus.progress.files_done.toLocaleString()} / ${indexStatus.progress.files_total.toLocaleString()} files`
               : "…"}
           </p>
         )}
