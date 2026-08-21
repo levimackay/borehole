@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Cancel superseded runs on the same ref (e.g. force-pushes to a PR branch).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-check:
+    name: rust-check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      # Tauri 2's current Linux prerequisite list (bundling libs aren't
+      # strictly needed for `cargo check`/`cargo test`, but installing them
+      # up front keeps this job's dependency story identical to what a real
+      # `cargo tauri build` needs on Ubuntu, and avoids a second install
+      # later just for the desktop crate).
+      - name: Install Tauri Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            libssl-dev \
+            libgtk-3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --workspace
+
+  frontend-check:
+    name: frontend-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Build (tsc + vite build)
+        run: npm run build
+
+      # No `lint` script exists in package.json yet (ESLint isn't set up in
+      # this project). This step is skipped rather than failing the job; see
+      # docs/RELEASE-SIGNING.md sibling note in the CI PR for the follow-up.
+      - name: Check for lint script
+        id: has-lint
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.lint ? 0 : 1)"; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: npm run lint
+        if: steps.has-lint.outputs.present == 'true'
+        run: npm run lint
+
+  security-audit:
+    name: security-audit
+    runs-on: ubuntu-latest
+    # Informational only: transitive advisory noise is common in early-stage
+    # projects and shouldn't block merges. Findings are still visible in the
+    # job logs/annotations below.
+    continue-on-error: true
+    permissions:
+      contents: read
+      issues: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: cargo audit (Cargo.lock)
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
+
+      - name: npm audit
+        run: npm audit --audit-level=high

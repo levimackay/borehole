@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an idea or improvement for Borehole.
+title: '[Feature]: '
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that Borehole doesn't support today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like Borehole to do instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any other approaches you've thought about, and why you'd prefer this one.
+
+  - type: dropdown
+    id: interface
+    attributes:
+      label: Where should this live?
+      options:
+        - CLI (borehole)
+        - Desktop app
+        - Both
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else — links, examples from other tools, etc.
